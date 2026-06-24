@@ -1,0 +1,81 @@
+import { Hono } from "hono";
+import {
+  exchangeCodeForSessionToken,
+  getOAuthRedirectUrl,
+  authMiddleware,
+  deleteSession,
+  MOCHA_SESSION_TOKEN_COOKIE_NAME,
+} from "@getmocha/users-service/backend";
+import { getCookie, setCookie } from "hono/cookie";
+
+const app = new Hono<{ Bindings: Env }>();
+
+// Get OAuth redirect URL
+app.get("/oauth/google/redirect_url", async (c) => {
+  const redirectUrl = await getOAuthRedirectUrl("google", {
+    apiUrl: c.env.MOCHA_USERS_SERVICE_API_URL,
+    apiKey: c.env.MOCHA_USERS_SERVICE_API_KEY,
+  });
+
+  return c.json({ redirectUrl }, 200);
+});
+
+// Exchange code for session token
+app.post("/sessions", async (c) => {
+  const body = await c.req.json();
+
+  if (!body.code) {
+    return c.json({ error: "No authorization code provided" }, 400);
+  }
+
+  const sessionToken = await exchangeCodeForSessionToken(body.code, {
+    apiUrl: c.env.MOCHA_USERS_SERVICE_API_URL,
+    apiKey: c.env.MOCHA_USERS_SERVICE_API_KEY,
+  });
+
+  setCookie(c, MOCHA_SESSION_TOKEN_COOKIE_NAME, sessionToken, {
+    httpOnly: true,
+    path: "/",
+    sameSite: "none",
+    secure: true,
+    maxAge: 60 * 24 * 60 * 60, // 60 days
+  });
+
+  return c.json({ success: true }, 200);
+});
+
+// Get current user
+app.get("/users/me", authMiddleware, async (c) => {
+  const user = c.get("user");
+  
+  // Only allow @unlockedtravel.com.br emails
+  if (!user?.email.endsWith("@unlockedtravel.com.br")) {
+    return c.json({ error: "Unauthorized - only @unlockedtravel.com.br emails allowed" }, 403);
+  }
+  
+  return c.json(user);
+});
+
+// Logout
+app.get("/logout", async (c) => {
+  const sessionToken = getCookie(c, MOCHA_SESSION_TOKEN_COOKIE_NAME);
+
+  if (typeof sessionToken === "string") {
+    await deleteSession(sessionToken, {
+      apiUrl: c.env.MOCHA_USERS_SERVICE_API_URL,
+      apiKey: c.env.MOCHA_USERS_SERVICE_API_KEY,
+    });
+  }
+
+  setCookie(c, MOCHA_SESSION_TOKEN_COOKIE_NAME, "", {
+    httpOnly: true,
+    path: "/",
+    sameSite: "none",
+    secure: true,
+    maxAge: 0,
+  });
+
+  return c.json({ success: true }, 200);
+});
+
+export default app;
