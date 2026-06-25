@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import { Card, CardContent } from '@/react-app/components/ui/card';
 import { Button } from '@/react-app/components/ui/button';
 import {
@@ -15,11 +14,7 @@ import { LeadDetailModal } from '@/react-app/components/LeadDetailModal';
 import { OnboardingChecklist } from '@/react-app/components/OnboardingChecklist';
 import { useTenant } from '@/react-app/contexts/TenantContext';
 import * as XLSX from 'xlsx';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY,
-);
+import { supabase } from '@/react-app/lib/supabase';
 
 interface Lead {
   id: number;
