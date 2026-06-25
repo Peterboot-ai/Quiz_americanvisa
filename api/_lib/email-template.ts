@@ -42,7 +42,6 @@ export function generateEmailHTML(data: EmailData): string {
   const c = tenant.contact;
   const copy = tenant.copy;
   const emailGold = t.goldEmail || t.gold;
-  const emailNavy = t.navyEmail || t.navy;
 
   const firstName = data.name.split(' ')[0];
   const primaryVisaName = visaNames[data.primary_visa] || data.primary_visa;
@@ -292,7 +291,7 @@ export function generateEmailHTML(data: EmailData): string {
 
           <!-- STATS -->
           <tr><td style="padding:5px 40px 5px;" class="mobile-pad">
-            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:${emailNavy}; border-radius:3px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:${t.navy}; border-radius:3px;">
               <tr>
                 <td style="padding:22px 15px; text-align:center; vertical-align:top;" width="50%" class="stat-col">
                   <p style="margin:0 0 3px; font-family:Georgia,serif; font-size:28px; font-weight:bold; color:${emailGold};">${approvalEbNiw}</p>

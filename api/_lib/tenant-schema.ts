@@ -10,7 +10,6 @@ export const ThemeSchema = z.object({
   flagBlue:  z.string().default('#1B3A6B'),
   flagRed:   z.string().default('#C41E3A'),
   goldEmail: z.string().default(''),
-  navyEmail: z.string().default(''),
 }).default({});
 
 export const AssetsSchema = z.object({
