@@ -49,7 +49,7 @@ const SuperAdmin = () => {
   const [inviting, setInviting] = useState(false);
   const [showNewForm, setShowNewForm] = useState(false);
   const [newTenant, setNewTenant] = useState({ slug: '', name: '', allowed_email_domain: '', sender_email: '', sender_name: '' });
-  const fileRef = useRef<HTMLInputElement>(null);
+  const fileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -237,7 +237,7 @@ const SuperAdmin = () => {
   };
 
   const uploadAsset = async (assetKey: string) => {
-    const file = fileRef.current?.files?.[0];
+    const file = fileRefs.current[assetKey]?.files?.[0];
     if (!file || !selected) return;
     setUploading(true);
     setMsg('');
@@ -263,7 +263,7 @@ const SuperAdmin = () => {
       }
     } finally {
       setUploading(false);
-      if (fileRef.current) fileRef.current.value = '';
+      if (fileRefs.current[assetKey]) fileRefs.current[assetKey]!.value = '';
     }
   };
 
@@ -527,7 +527,7 @@ const SuperAdmin = () => {
                             </div>
                           )}
                           <div className="flex gap-2 items-center">
-                            <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="text-xs"/>
+                            <input ref={el => { fileRefs.current[asset.key] = el; }} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="text-xs"/>
                             <Button size="sm" variant="outline" onClick={() => uploadAsset(asset.key)} disabled={uploading} className="text-xs">
                               {uploading ? 'Enviando...' : 'Upload'}
                             </Button>
