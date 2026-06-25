@@ -92,15 +92,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (insertError) throw insertError;
 
-    // Send email with tenant branding — non-blocking
-    if (!tenant.brevo_api_key || !tenant.sender_email) {
+    // Send email — fetch fresh tenant data (brevo_api_key not cached)
+    const { data: freshTenant } = await supabase
+      .from('tenants')
+      .select('brevo_api_key, sender_email, sender_name, theme, assets, contact, copy')
+      .eq('id', tenant.id)
+      .single();
+
+    if (!freshTenant?.brevo_api_key || !freshTenant?.sender_email) {
       return res.status(200).json({ success: true, leadId: inserted.id });
     }
     try {
-      const theme    = ThemeSchema.parse(tenant.theme);
-      const assets   = AssetsSchema.parse(tenant.assets);
-      const contact_ = ContactSchema.parse(tenant.contact);
-      const copy     = CopySchema.parse(tenant.copy);
+      const theme    = ThemeSchema.parse(freshTenant.theme);
+      const assets   = AssetsSchema.parse(freshTenant.assets);
+      const contact_ = ContactSchema.parse(freshTenant.contact);
+      const copy     = CopySchema.parse(freshTenant.copy);
 
       const emailHTML = generateEmailHTML({
         name:         contact.name,
@@ -115,11 +121,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const emailRes = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
         headers: {
-          'api-key': tenant.brevo_api_key ?? '',
+          'api-key': freshTenant.brevo_api_key ?? '',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          sender: { name: tenant.sender_name ?? tenant.name, email: tenant.sender_email ?? '' },
+          sender: { name: freshTenant.sender_name ?? tenant.name, email: freshTenant.sender_email ?? '' },
           to: [{ email: contact.email, name: contact.name }],
           subject: `${contact.name.split(' ')[0]}, seu resultado está pronto — ${tenant.name}`,
           htmlContent: emailHTML,
