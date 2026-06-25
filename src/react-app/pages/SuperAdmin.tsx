@@ -28,7 +28,14 @@ interface Tenant {
   created_at: string;
 }
 
-type Tab = 'info' | 'branding' | 'contact' | 'copy' | 'team' | 'assets';
+type Tab = 'info' | 'branding' | 'contact' | 'copy' | 'team' | 'assets' | 'users';
+
+interface TenantUser {
+  user_id: string;
+  email: string;
+  role: string;
+  created_at: string;
+}
 
 const SuperAdmin = () => {
   const [session, setSession] = useState<{ access_token: string; user: { email: string } } | null>(null);
@@ -42,6 +49,9 @@ const SuperAdmin = () => {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [tenantUsers, setTenantUsers] = useState<TenantUser[]>([]);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviting, setInviting] = useState(false);
   const [showNewForm, setShowNewForm] = useState(false);
   const [newTenant, setNewTenant] = useState({ slug: '', name: '', allowed_email_domain: '', sender_email: '', sender_name: '' });
   const fileRef = useRef<HTMLInputElement>(null);
@@ -76,6 +86,51 @@ const SuperAdmin = () => {
       setLoading(false);
     });
   }, [session]);
+
+  const loadTenantUsers = async (tenantId: number) => {
+    const r = await fetch(`/api/admin/tenants/${tenantId}/users`, { headers: headers() });
+    const data = await r.json();
+    if (data.success) setTenantUsers(data.users ?? []);
+  };
+
+  const inviteUser = async () => {
+    if (!selected || !inviteEmail.trim()) return;
+    setInviting(true);
+    setMsg('');
+    try {
+      const r = await fetch(`/api/admin/tenants/${selected.id}/users`, {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify({ email: inviteEmail.trim(), role: 'partner_admin' }),
+      });
+      const data = await r.json();
+      if (data.success) {
+        setMsg('✅ Convite enviado');
+        setInviteEmail('');
+        await loadTenantUsers(selected.id);
+      } else {
+        setMsg(`❌ ${data.error}`);
+      }
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const removeUser = async (userId: string) => {
+    if (!selected || !confirm('Remover acesso deste usuário?')) return;
+    const r = await fetch(`/api/admin/tenants/${selected.id}/users`, {
+      method: 'DELETE',
+      headers: headers(),
+      body: JSON.stringify({ user_id: userId }),
+    });
+    const data = await r.json();
+    if (data.success) {
+      setMsg('✅ Usuário removido');
+      await loadTenantUsers(selected.id);
+    } else {
+      setMsg(`❌ ${data.error}`);
+    }
+  };
 
   const selectTenant = (t: Tenant) => {
     setSelected(t);
@@ -296,6 +351,12 @@ const SuperAdmin = () => {
     </div>
   );
 
+  const switchTab = (t: Tab) => {
+    setTab(t);
+    setMsg('');
+    if (t === 'users' && selected) loadTenantUsers(selected.id);
+  };
+
   const tabs: { key: Tab; label: string }[] = [
     { key: 'info', label: 'Informações' },
     { key: 'branding', label: 'Cores' },
@@ -303,6 +364,7 @@ const SuperAdmin = () => {
     { key: 'copy', label: 'Textos / GTM' },
     { key: 'team', label: 'Equipe' },
     { key: 'assets', label: 'Assets' },
+    { key: 'users', label: 'Usuários' },
   ];
 
   return (
@@ -382,7 +444,7 @@ const SuperAdmin = () => {
             {/* Tabs */}
             <div className="flex gap-1 mb-6 border-b">
               {tabs.map(t => (
-                <button key={t.key} onClick={() => setTab(t.key)}
+                <button key={t.key} onClick={() => switchTab(t.key)}
                   className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === t.key ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
                   {t.label}
                 </button>
@@ -492,7 +554,59 @@ const SuperAdmin = () => {
                   </>
                 )}
 
-                {tab !== 'assets' && (
+                {tab === 'users' && (
+                  <>
+                    <p className="text-xs text-gray-400 mb-4">
+                      Usuários com acesso ao painel admin deste tenant.
+                      {selected.allowed_email_domain && ` Domínio exigido: ${selected.allowed_email_domain}`}
+                    </p>
+
+                    {/* Convidar */}
+                    <div className="flex gap-2 mb-6">
+                      <input
+                        type="email"
+                        placeholder="email@empresa.com"
+                        value={inviteEmail}
+                        onChange={e => setInviteEmail(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && inviteUser()}
+                        className="flex-1 px-3 py-2 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                      <Button size="sm" onClick={inviteUser} disabled={inviting || !inviteEmail.trim()}>
+                        {inviting ? 'Enviando...' : 'Convidar'}
+                      </Button>
+                    </div>
+
+                    {/* Lista */}
+                    {tenantUsers.length === 0 ? (
+                      <p className="text-sm text-gray-400 text-center py-6">Nenhum usuário ainda.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {tenantUsers.map(u => (
+                          <div key={u.user_id} className="flex items-center justify-between p-3 border rounded bg-white">
+                            <div>
+                              <p className="text-sm font-medium text-gray-800">{u.email}</p>
+                              <p className="text-xs text-gray-400">
+                                {u.role} · desde {new Date(u.created_at).toLocaleDateString('pt-BR')}
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="text-xs"
+                              onClick={() => removeUser(u.user_id)}
+                            >
+                              Remover
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {msg && <p className={`mt-4 text-sm ${msg.startsWith('✅') ? 'text-green-600' : 'text-red-600'}`}>{msg}</p>}
+                  </>
+                )}
+
+                {tab !== 'assets' && tab !== 'users' && (
                   <div className="mt-6 flex items-center gap-3">
                     <Button onClick={save} disabled={saving} size="sm">
                       {saving ? 'Salvando...' : 'Salvar'}
