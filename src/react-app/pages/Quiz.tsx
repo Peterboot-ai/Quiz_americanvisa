@@ -541,7 +541,7 @@ const Quiz = () => {
         .inp{width:100%;padding:1.05rem 1.2rem;background:white;border:1px solid rgba(27,37,65,.1);color:var(--color-navy,#1B2541);font-family:'Crimson Pro',serif;font-size:1.05rem;margin-bottom:.6rem;transition:all .25s ease;border-radius:2px}
         .inp:focus{outline:none;border-color:var(--color-gold,#B8860B);box-shadow:0 0 0 3px rgba(184,134,11,.1)}
         .inp::placeholder{color:#B0AEB5}
-        .flag-bar{height:5px;background:linear-gradient(90deg,var(--color-flag-blue,#1B3A6B) 40%,var(--color-gold,#B8860B) 40%,var(--color-gold,#B8860B) 60%,var(--color-flag-red,#C41E3A) 60%)}
+        .flag-bar{height:5px;background:linear-gradient(90deg,var(--color-flag-blue,#1B3A6B) 40%,var(--color-gold,#B8860B) 40%,var(--color-gold,#B8860B) 60%,var(--color-flag-red,#C41E3A) 60%);transition:background .3s}
         .texture{position:absolute;top:0;left:0;right:0;bottom:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");opacity:.03;pointer-events:none}
         .waf{position:fixed;bottom:2rem;right:2rem;width:60px;height:60px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,.35);z-index:100;text-decoration:none;transition:all .25s;color:white}
         .waf:hover{transform:translateY(-3px);box-shadow:0 6px 25px rgba(37,211,102,.45)}
@@ -852,7 +852,7 @@ const Quiz = () => {
           </div>
         )}
 
-        <div style={{position:'absolute',bottom:0,left:0,right:0,height:5,background:`linear-gradient(90deg,#1B3A6B 40%,${gold} 40%,${gold} 60%,#C41E3A 60%)`}}/>
+        <div style={{position:'absolute',bottom:0,left:0,right:0,height:5,background:`linear-gradient(90deg,${flagBlueHex} 40%,${goldHex} 40%,${goldHex} 60%,${flagRedHex} 60%)`}}/>
       </section>
 
       {/* Footer */}
