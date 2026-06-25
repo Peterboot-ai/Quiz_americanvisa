@@ -576,7 +576,7 @@ const Quiz = () => {
         </a>
       )}
 
-      <section style={{minHeight:'auto',paddingTop:'12rem',paddingBottom:'10rem',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',position:'relative',overflow:'hidden',padding:'1.5rem'}}>
+      <section style={{minHeight:'auto',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',position:'relative',overflow:'hidden',paddingTop:'10rem',paddingBottom:'6rem',paddingLeft:'1.5rem',paddingRight:'1.5rem'}}>
         <div className="texture"/>
 
         <div style={{position:'absolute',top:0,left:0,right:0,padding:'1.3rem 5%',display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:10,borderBottom:'1px solid rgba(0,0,0,.06)',flexWrap:'wrap',gap:'.8rem',backgroundColor:creamHex}}>
