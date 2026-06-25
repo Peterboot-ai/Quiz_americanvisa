@@ -36,19 +36,24 @@ export async function resolveAuth(req: IncomingMessage): Promise<AuthUser | null
     return { id: user.id, email: user.email, role: 'super_admin', tenant: null };
   }
 
-  // For partner_admin: resolve tenant from request and check membership
-  const tenant = await resolveTenant(req);
-  if (!tenant) return null;
-
+  // For partner_admin: find tenant directly by user_id (not by domain)
   const { data: tu } = await supabase
     .from('tenant_users')
-    .select('role')
+    .select('role, tenant_id')
     .eq('user_id', user.id)
-    .eq('tenant_id', tenant.id)
     .maybeSingle();
 
   if (!tu?.role) return null;
   const role = tu.role as 'partner_admin';
+
+  const { data: tenant } = await supabase
+    .from('tenants')
+    .select('*')
+    .eq('id', tu.tenant_id)
+    .eq('active', true)
+    .single();
+
+  if (!tenant) return null;
 
   // Enforce allowed_email_domain for partner_admins
   if (tenant.allowed_email_domain) {

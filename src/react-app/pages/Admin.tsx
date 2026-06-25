@@ -41,7 +41,11 @@ interface Lead {
 
 const Admin = () => {
   const { tenant } = useTenant();
-  const tenantSlug = new URLSearchParams(window.location.search).get('tenant') ?? tenant?.slug ?? undefined;
+  const urlTenantSlug = new URLSearchParams(window.location.search).get('tenant') ?? undefined;
+  const [resolvedTenantSlug, setResolvedTenantSlug] = useState<string | undefined>(urlTenantSlug);
+  const [resolvedTenantName, setResolvedTenantName] = useState<string | undefined>(undefined);
+  const tenantSlug = resolvedTenantSlug;
+  const tenantName = resolvedTenantName ?? tenant?.name;
   const [session, setSession] = useState<{ access_token: string; user: { email: string } } | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -108,20 +112,28 @@ const Admin = () => {
   useEffect(() => {
     if (session?.access_token) {
       const token = session.access_token;
-      fetchLeads(token);
-      // Check onboarding status
-      const onboardingUrl = tenantSlug ? `/api/admin/onboarding?tenant=${tenantSlug}` : '/api/admin/onboarding';
-      fetch(onboardingUrl, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      // Resolve tenant from server (partner_admin gets their own tenant automatically)
+      fetch('/api/admin/me', { headers: { Authorization: `Bearer ${token}` } })
         .then(r => r.json())
-        .then(data => {
-          if (data.success) {
-            setOnboarding(data);
-            if (!data.isComplete) setShowOnboarding(true);
+        .then(meData => {
+          const slug = urlTenantSlug ?? meData.tenant?.slug;
+          if (meData.success && meData.tenant) {
+            if (!urlTenantSlug) setResolvedTenantSlug(meData.tenant.slug);
+            setResolvedTenantName(meData.tenant.name);
           }
+          fetchLeads(token);
+          const onboardingUrl = slug ? `/api/admin/onboarding?tenant=${slug}` : '/api/admin/onboarding';
+          fetch(onboardingUrl, { headers: { Authorization: `Bearer ${token}` } })
+            .then(r => r.json())
+            .then(data => {
+              if (data.success) {
+                setOnboarding(data);
+                if (!data.isComplete) setShowOnboarding(true);
+              }
+            })
+            .catch(() => {/* non-blocking */});
         })
-        .catch(() => {/* non-blocking */});
+        .catch(() => { fetchLeads(token); });
     } else {
       setLoading(false);
     }
@@ -375,7 +387,7 @@ const Admin = () => {
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#334155]">{tenant?.name ?? ''} Admin</h1>
+            <h1 className="text-2xl font-bold text-[#334155]">{tenantName ?? ''} Admin</h1>
             <p className="text-sm text-[#64748B]">Portal de Leads</p>
           </div>
           <div className="flex gap-3 items-center">
@@ -401,7 +413,7 @@ const Admin = () => {
               completedCount={onboarding.completedCount}
               totalCount={onboarding.totalCount}
               steps={onboarding.steps}
-              tenantName={tenant?.name ?? 'Admin'}
+              tenantName={tenantName ?? 'Admin'}
               onDismiss={() => setShowOnboarding(false)}
             />
           </div>
