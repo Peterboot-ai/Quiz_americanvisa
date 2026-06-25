@@ -22,6 +22,7 @@ export async function resolveAuth(req: IncomingMessage): Promise<AuthUser | null
 
   // Validate token via anon client (verifies JWT signature)
   const { data: { user }, error } = await supabaseAnon.auth.getUser(token);
+  console.log('[auth] getUser result:', { userId: user?.id, email: user?.email, error: error?.message, tokenPrefix: token.slice(0, 30) });
   if (error || !user?.email) return null;
 
   // Use service_role to bypass RLS when reading tenant_users

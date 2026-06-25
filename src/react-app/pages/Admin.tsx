@@ -95,6 +95,7 @@ const Admin = () => {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
       });
       const data = await response.json();
+      console.log('[Admin] leads response:', response.status, JSON.stringify(data));
       if (data.success) setLeads(data.leads);
     } catch (error) {
       console.error('Error fetching leads:', error);
