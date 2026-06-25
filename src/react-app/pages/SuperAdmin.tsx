@@ -163,6 +163,7 @@ const SuperAdmin = () => {
       footerCopyright: (t.copy as Record<string, string>)?.footerCopyright ?? '',
       footerAddress: (t.copy as Record<string, string>)?.footerAddress ?? '',
       footerServices: ((t.copy as Record<string, unknown>)?.footerServices as string[] ?? []).join('\n'),
+      footerDark: (t.copy as Record<string, unknown>)?.footerDark !== false,
       // tracking
       gtmId: t.tracking?.gtmId ?? '',
       // team
@@ -208,6 +209,7 @@ const SuperAdmin = () => {
           footerCopyright: form.footerCopyright,
           footerAddress: form.footerAddress,
           footerServices: form.footerServices.split('\n').map((s: string) => s.trim()).filter(Boolean),
+          footerDark: form.footerDark,
         };
         body.tracking = { gtmId: form.gtmId };
       } else if (tab === 'team') {
@@ -560,6 +562,17 @@ const SuperAdmin = () => {
                     <F label="Endereço do rodapé" fkey="footerAddress" placeholder="CNPJ: ... • Endereço..."/>
                     <F label="Outros Serviços do rodapé" fkey="footerServices" type="textarea" placeholder={"Cidadania Portuguesa\nCidadania Espanhola\nCidadania Italiana"}/>
                     <p className="text-xs text-gray-400 -mt-2">Um serviço por linha</p>
+                    <div className="flex items-center gap-3">
+                      <label className="text-sm font-medium text-gray-300">Rodapé escuro</label>
+                      <button
+                        type="button"
+                        onClick={() => setForm((f: Record<string, unknown>) => ({...f, footerDark: !f.footerDark}))}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${form.footerDark ? 'bg-blue-600' : 'bg-gray-500'}`}
+                      >
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${form.footerDark ? 'translate-x-6' : 'translate-x-1'}`}/>
+                      </button>
+                      <span className="text-xs text-gray-400">{form.footerDark ? 'Escuro (navy)' : 'Claro (creme)'}</span>
+                    </div>
                     <F label="GTM ID" fkey="gtmId" placeholder="GTM-XXXXXXX"/>
                   </>
                 )}

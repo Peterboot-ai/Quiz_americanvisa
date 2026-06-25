@@ -856,7 +856,17 @@ const Quiz = () => {
       </section>
 
       {/* Footer */}
-      <footer style={{position:'relative',zIndex:50,backgroundColor:'#0F1A2E',borderTop:'1px solid rgba(255,255,255,0.1)',padding:'3rem 1.5rem'}}>
+      {(() => {
+        const footerDark = tenant?.copy?.footerDark !== false;
+        const footerBg = footerDark ? '#0F1A2E' : creamHex;
+        const footerBorder = footerDark ? 'rgba(255,255,255,0.1)' : `rgba(0,0,0,0.1)`;
+        const footerTitle = footerDark ? 'white' : navyHex;
+        const footerText = footerDark ? 'rgba(255,255,255,0.6)' : `rgba(0,0,0,0.55)`;
+        const footerLink = footerDark ? 'rgba(255,255,255,0.7)' : `rgba(0,0,0,0.65)`;
+        const footerMuted = footerDark ? 'rgba(255,255,255,0.4)' : `rgba(0,0,0,0.4)`;
+        const footerHover = goldHex;
+        return (
+      <footer style={{position:'relative',zIndex:50,backgroundColor:footerBg,borderTop:`1px solid ${footerBorder}`,padding:'3rem 1.5rem'}}>
         <div style={{maxWidth:1200,margin:'0 auto'}}>
           {/* Footer Grid */}
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))',gap:'2rem',marginBottom:'2rem'}}>
@@ -869,21 +879,21 @@ const Quiz = () => {
                   style={{height:80,width:'auto'}}
                 />
               </div>}
-              <p style={{fontSize:'.875rem',color:'rgba(255,255,255,0.6)',lineHeight:1.6}}>
+              <p style={{fontSize:'.875rem',color:footerText,lineHeight:1.6}}>
                 {tenant?.copy?.footerTagline ?? 'Consultoria especializada em processos migratórios e estratégias de acúmulo de milhas aéreas.'}
               </p>
             </div>
 
             {/* Coluna 2: Contato */}
             <div style={{display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center'}}>
-              <h5 style={{color:'white',fontWeight:'bold',marginBottom:'1rem',fontSize:'.875rem',letterSpacing:'.1em',textTransform:'uppercase'}}>Contato</h5>
+              <h5 style={{color:footerTitle,fontWeight:'bold',marginBottom:'1rem',fontSize:'.875rem',letterSpacing:'.1em',textTransform:'uppercase'}}>Contato</h5>
               <div style={{display:'flex',flexDirection:'column',gap:'.625rem'}}>
                 {contactEmail && (
                   <a
                     href={`mailto:${contactEmail}`}
-                    style={{display:'flex',alignItems:'center',gap:'.5rem',fontSize:'.875rem',color:'rgba(255,255,255,0.7)',textDecoration:'none',transition:'color .25s'}}
-                    onMouseOver={e=>e.currentTarget.style.color='#D4A847'}
-                    onMouseOut={e=>e.currentTarget.style.color='rgba(255,255,255,0.7)'}
+                    style={{display:'flex',alignItems:'center',gap:'.5rem',fontSize:'.875rem',color:footerLink,textDecoration:'none',transition:'color .25s'}}
+                    onMouseOver={e=>e.currentTarget.style.color=footerHover}
+                    onMouseOut={e=>e.currentTarget.style.color=footerLink}
                   >
                     <span>✉️</span>
                     <span>{contactEmail}</span>
@@ -894,9 +904,9 @@ const Quiz = () => {
                     href={`https://instagram.com/${contactInstagram.replace('@','')}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{display:'flex',alignItems:'center',gap:'.5rem',fontSize:'.875rem',color:'rgba(255,255,255,0.7)',textDecoration:'none',transition:'color .25s'}}
-                    onMouseOver={e=>e.currentTarget.style.color='#D4A847'}
-                    onMouseOut={e=>e.currentTarget.style.color='rgba(255,255,255,0.7)'}
+                    style={{display:'flex',alignItems:'center',gap:'.5rem',fontSize:'.875rem',color:footerLink,textDecoration:'none',transition:'color .25s'}}
+                    onMouseOver={e=>e.currentTarget.style.color=footerHover}
+                    onMouseOut={e=>e.currentTarget.style.color=footerLink}
                   >
                     <span>📷</span>
                     <span>{contactInstagram}</span>
@@ -907,8 +917,8 @@ const Quiz = () => {
 
             {/* Coluna 3: Outros Serviços */}
             <div style={{display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center'}}>
-              <h5 style={{color:'white',fontWeight:'bold',marginBottom:'1rem',fontSize:'.875rem',letterSpacing:'.1em',textTransform:'uppercase'}}>Outros Serviços</h5>
-              <ul style={{listStyle:'none',display:'flex',flexDirection:'column',gap:'.5rem',fontSize:'.875rem',color:'rgba(255,255,255,0.6)'}}>
+              <h5 style={{color:footerTitle,fontWeight:'bold',marginBottom:'1rem',fontSize:'.875rem',letterSpacing:'.1em',textTransform:'uppercase'}}>Outros Serviços</h5>
+              <ul style={{listStyle:'none',display:'flex',flexDirection:'column',gap:'.5rem',fontSize:'.875rem',color:footerText}}>
                 {(tenant?.copy?.footerServices?.length
                   ? tenant.copy.footerServices
                   : ['Visto de Turismo (Canadá, Austrália, EUA)', 'Visto de Trabalho para EUA', 'Cidadania (Italiana, Portuguesa, Alemã)', 'Genealogia']
@@ -918,7 +928,7 @@ const Quiz = () => {
           </div>
 
           {/* Barra inferior */}
-          <div style={{paddingTop:'1.5rem',borderTop:'1px solid rgba(255,255,255,0.1)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'.75rem',fontSize:'.75rem',color:'rgba(255,255,255,0.4)',textAlign:'center'}}>
+          <div style={{paddingTop:'1.5rem',borderTop:`1px solid ${footerBorder}`,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'.75rem',fontSize:'.75rem',color:footerMuted,textAlign:'center'}}>
             <div>
               <div>{tenant?.copy?.footerCopyright ?? `© 2026 ${tenantName} • Todos os direitos reservados`}</div>
               {tenant?.copy?.footerAddress && <div style={{marginTop:'.25rem'}}>{tenant.copy.footerAddress}</div>}
@@ -926,6 +936,8 @@ const Quiz = () => {
           </div>
         </div>
       </footer>
+        );
+      })()}
     </div>
   );
 };
