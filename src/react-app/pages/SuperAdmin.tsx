@@ -162,6 +162,7 @@ const SuperAdmin = () => {
       footerTagline: (t.copy as Record<string, string>)?.footerTagline ?? '',
       footerCopyright: (t.copy as Record<string, string>)?.footerCopyright ?? '',
       footerAddress: (t.copy as Record<string, string>)?.footerAddress ?? '',
+      footerServices: ((t.copy as Record<string, unknown>)?.footerServices as string[] ?? []).join('\n'),
       // tracking
       gtmId: t.tracking?.gtmId ?? '',
       // team
@@ -206,6 +207,7 @@ const SuperAdmin = () => {
           footerTagline: form.footerTagline,
           footerCopyright: form.footerCopyright,
           footerAddress: form.footerAddress,
+          footerServices: form.footerServices.split('\n').map((s: string) => s.trim()).filter(Boolean),
         };
         body.tracking = { gtmId: form.gtmId };
       } else if (tab === 'team') {
@@ -556,6 +558,8 @@ const SuperAdmin = () => {
                     <F label="Tagline do rodapé" fkey="footerTagline" type="textarea"/>
                     <F label="Copyright do rodapé" fkey="footerCopyright" placeholder="© 2026 Empresa • Todos os direitos reservados"/>
                     <F label="Endereço do rodapé" fkey="footerAddress" placeholder="CNPJ: ... • Endereço..."/>
+                    <F label="Outros Serviços do rodapé" fkey="footerServices" type="textarea" placeholder={"Cidadania Portuguesa\nCidadania Espanhola\nCidadania Italiana"}/>
+                    <p className="text-xs text-gray-400 -mt-2">Um serviço por linha</p>
                     <F label="GTM ID" fkey="gtmId" placeholder="GTM-XXXXXXX"/>
                   </>
                 )}

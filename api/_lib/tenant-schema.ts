@@ -44,6 +44,7 @@ export const CopySchema = z.object({
   footerTagline:  z.string().default(''),
   footerCopyright: z.string().default(''),
   footerAddress:  z.string().default(''),
+  footerServices: z.array(z.string()).default([]),
 }).default({});
 
 export const TrackingSchema = z.object({

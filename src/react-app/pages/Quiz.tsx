@@ -583,7 +583,7 @@ const Quiz = () => {
           {logoUrl && <img
             src={logoUrl}
             alt={tenantName}
-            style={{height:'clamp(35px,8vw,50px)',width:'auto',objectFit:'contain'}}
+            style={{height:'clamp(48px,10vw,72px)',width:'auto',objectFit:'contain',maxWidth:'180px'}}
           />}
           {(phase==='quiz'||phase==='ready'||phase==='done') && (
             <button 
@@ -909,10 +909,10 @@ const Quiz = () => {
             <div style={{display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center'}}>
               <h5 style={{color:'white',fontWeight:'bold',marginBottom:'1rem',fontSize:'.875rem',letterSpacing:'.1em',textTransform:'uppercase'}}>Outros Serviços</h5>
               <ul style={{listStyle:'none',display:'flex',flexDirection:'column',gap:'.5rem',fontSize:'.875rem',color:'rgba(255,255,255,0.6)'}}>
-                <li>Visto de Turismo (Canadá, Austrália, EUA)</li>
-                <li>Visto de Trabalho para EUA</li>
-                <li>Cidadania (Italiana, Portuguesa, Alemã)</li>
-                <li>Genealogia</li>
+                {(tenant?.copy?.footerServices?.length
+                  ? tenant.copy.footerServices
+                  : ['Visto de Turismo (Canadá, Austrália, EUA)', 'Visto de Trabalho para EUA', 'Cidadania (Italiana, Portuguesa, Alemã)', 'Genealogia']
+                ).map((s: string, i: number) => <li key={i}>{s}</li>)}
               </ul>
             </div>
           </div>
