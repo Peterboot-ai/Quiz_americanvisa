@@ -11,6 +11,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!auth) return;
 
   const status = req.query.status as string | undefined;
+  const tenantSlug = req.query.tenant as string | undefined;
 
   let query = supabase
     .from('leads')
@@ -26,8 +27,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     `)
     .order('created_at', { ascending: false });
 
-  // super_admin vê todos os tenants; partner_admin vê só o próprio
-  if (auth.role !== 'super_admin' && auth.tenant) {
+  if (auth.role === 'super_admin' && tenantSlug) {
+    // Super admin acessando admin de um tenant específico — filtra por slug
+    const { data: tenantRow } = await supabase
+      .from('tenants')
+      .select('id')
+      .eq('slug', tenantSlug)
+      .eq('active', true)
+      .single();
+    if (tenantRow) {
+      query = query.eq('tenant_id', tenantRow.id);
+    }
+  } else if (auth.role !== 'super_admin' && auth.tenant) {
+    // partner_admin sempre vê só o próprio tenant
     query = query.eq('tenant_id', auth.tenant.id);
   }
 
