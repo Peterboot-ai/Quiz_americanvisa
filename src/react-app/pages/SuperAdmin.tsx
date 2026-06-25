@@ -44,6 +44,7 @@ const SuperAdmin = () => {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [generatingPalette, setGeneratingPalette] = useState(false);
   const [tenantUsers, setTenantUsers] = useState<TenantUser[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
@@ -267,6 +268,58 @@ const SuperAdmin = () => {
     }
   };
 
+  const generatePalette = async () => {
+    const file = fileRefs.current['logoUrl']?.files?.[0];
+    if (!file && !selected?.assets?.logoUrl) {
+      setMsg('❌ Faça o upload da Logo principal primeiro, ou selecione um arquivo de logo.');
+      return;
+    }
+    setGeneratingPalette(true);
+    setMsg('');
+    try {
+      let imageBase64: string;
+      let mimeType: string;
+
+      if (file) {
+        mimeType = file.type;
+        imageBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string).split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      } else {
+        // Fetch existing logo and convert to base64
+        const resp = await fetch(selected!.assets!.logoUrl as string);
+        const blob = await resp.blob();
+        mimeType = blob.type || 'image/png';
+        imageBase64 = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string).split(',')[1]);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      }
+
+      const r = await fetch(`/api/admin/tenants/${selected!.id}/suggest-palette`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
+        body: JSON.stringify({ imageBase64, mimeType }),
+      });
+      const data = await r.json();
+      if (data.success && data.palette) {
+        setForm(f => ({ ...f, ...data.palette }));
+        setMsg('✅ Paleta gerada! Revise as cores e clique em Salvar.');
+      } else {
+        setMsg(`❌ ${data.error ?? 'Erro ao gerar paleta'}`);
+      }
+    } catch (e) {
+      setMsg('❌ Erro ao gerar paleta');
+    } finally {
+      setGeneratingPalette(false);
+    }
+  };
+
   const createTenant = async () => {
     if (!newTenant.slug || !newTenant.name) return;
     const r = await fetch('/api/admin/tenants', {
@@ -469,6 +522,12 @@ const SuperAdmin = () => {
                 {tab === 'branding' && (
                   <>
                     <p className="text-xs text-gray-400 mb-4">Cores da marca — afetam Quiz, Admin e e-mails</p>
+                    <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                      <p className="text-xs text-purple-700 mb-2">✨ Gere a paleta automaticamente a partir da logo</p>
+                      <Button size="sm" onClick={generatePalette} disabled={generatingPalette} className="bg-purple-600 hover:bg-purple-700 text-white text-xs">
+                        {generatingPalette ? '⏳ Analisando logo...' : '🎨 Gerar paleta com IA'}
+                      </Button>
+                    </div>
                     <Color label="Navy (cor principal)" fkey="navy"/>
                     <Color label="Navy Alt" fkey="navyAlt"/>
                     <Color label="Gold (destaque)" fkey="gold"/>
