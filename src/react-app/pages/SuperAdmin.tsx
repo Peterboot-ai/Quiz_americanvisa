@@ -407,9 +407,6 @@ const SuperAdmin = () => {
     );
   }
 
-  const Fld = (props: Omit<React.ComponentProps<typeof F>, 'form' | 'setForm'>) => <F {...props} form={form} setForm={setForm} />;
-  const Clr = (props: Omit<React.ComponentProps<typeof Color>, 'form' | 'setForm'>) => <Color {...props} form={form} setForm={setForm} />;
-
   const switchTab = (t: Tab) => {
     setTab(t);
     setMsg('');
@@ -514,18 +511,18 @@ const SuperAdmin = () => {
               <CardContent className="p-6">
                 {tab === 'info' && (
                   <>
-                    <Fld label="Nome" fkey="name"/>
-                    <Fld label="Nome legal" fkey="legal_name"/>
+                    <F label="Nome" fkey="name" form={form} setForm={setForm}/>
+                    <F label="Nome legal" fkey="legal_name" form={form} setForm={setForm}/>
                     <div className="mb-3 flex items-center gap-2">
                       <input type="checkbox" checked={!!form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4"/>
                       <label className="text-sm text-gray-700">Ativo</label>
                     </div>
-                    <Fld label="Domínios (separados por vírgula)" fkey="domains" placeholder="dominio.com.br, www.dominio.com.br"/>
-                    <Fld label="Domínio de e-mail permitido" fkey="allowed_email_domain" placeholder="@empresa.com.br"/>
-                    <Fld label="E-mail remetente" fkey="sender_email" type="email"/>
-                    <Fld label="Nome remetente" fkey="sender_name"/>
-                    <Fld label="Destinatários do relatório (vírgula)" fkey="report_recipients" placeholder="a@empresa.com, b@empresa.com"/>
-                    <Fld label="Chave Brevo (deixe em branco para não alterar)" fkey="brevo_api_key" type="password"/>
+                    <F label="Domínios (separados por vírgula)" fkey="domains" placeholder="dominio.com.br, www.dominio.com.br" form={form} setForm={setForm}/>
+                    <F label="Domínio de e-mail permitido" fkey="allowed_email_domain" placeholder="@empresa.com.br" form={form} setForm={setForm}/>
+                    <F label="E-mail remetente" fkey="sender_email" type="email" form={form} setForm={setForm}/>
+                    <F label="Nome remetente" fkey="sender_name" form={form} setForm={setForm}/>
+                    <F label="Destinatários do relatório (vírgula)" fkey="report_recipients" placeholder="a@empresa.com, b@empresa.com" form={form} setForm={setForm}/>
+                    <F label="Chave Brevo (deixe em branco para não alterar)" fkey="brevo_api_key" type="password" form={form} setForm={setForm}/>
                   </>
                 )}
 
@@ -538,35 +535,35 @@ const SuperAdmin = () => {
                         {generatingPalette ? '⏳ Analisando logo...' : '🎨 Gerar paleta com IA'}
                       </Button>
                     </div>
-                    <Clr label="Navy (cor principal)" fkey="navy"/>
-                    <Clr label="Navy Alt" fkey="navyAlt"/>
-                    <Clr label="Gold (destaque)" fkey="gold"/>
-                    <Clr label="Gold Alt" fkey="goldAlt"/>
-                    <Clr label="Cream (fundo)" fkey="cream"/>
-                    <Clr label="Cream Alt" fkey="creamAlt"/>
-                    <Clr label="Flag Blue (barra bandeira)" fkey="flagBlue"/>
-                    <Clr label="Flag Red (barra bandeira)" fkey="flagRed"/>
+                    <Color label="Navy (cor principal)" fkey="navy" form={form} setForm={setForm}/>
+                    <Color label="Navy Alt" fkey="navyAlt" form={form} setForm={setForm}/>
+                    <Color label="Gold (destaque)" fkey="gold" form={form} setForm={setForm}/>
+                    <Color label="Gold Alt" fkey="goldAlt" form={form} setForm={setForm}/>
+                    <Color label="Cream (fundo)" fkey="cream" form={form} setForm={setForm}/>
+                    <Color label="Cream Alt" fkey="creamAlt" form={form} setForm={setForm}/>
+                    <Color label="Flag Blue (barra bandeira)" fkey="flagBlue" form={form} setForm={setForm}/>
+                    <Color label="Flag Red (barra bandeira)" fkey="flagRed" form={form} setForm={setForm}/>
                   </>
                 )}
 
                 {tab === 'contact' && (
                   <>
-                    <Fld label="WhatsApp (só números, ex: 554197177910)" fkey="whatsapp"/>
-                    <Fld label="Telefone" fkey="phone"/>
-                    <Fld label="E-mail de contato" fkey="email" type="email"/>
-                    <Fld label="Instagram (ex: @empresa)" fkey="instagram"/>
-                    <Fld label="Website (ex: empresa.com.br)" fkey="website"/>
+                    <F label="WhatsApp (só números, ex: 554197177910)" fkey="whatsapp" form={form} setForm={setForm}/>
+                    <F label="Telefone" fkey="phone" form={form} setForm={setForm}/>
+                    <F label="E-mail de contato" fkey="email" type="email" form={form} setForm={setForm}/>
+                    <F label="Instagram (ex: @empresa)" fkey="instagram" form={form} setForm={setForm}/>
+                    <F label="Website (ex: empresa.com.br)" fkey="website" form={form} setForm={setForm}/>
                   </>
                 )}
 
                 {tab === 'copy' && (
                   <>
-                    <Fld label="Taxa de aprovação EB-2 NIW / EB-1A" fkey="approvalRateEbNiwEb1a" placeholder="82%"/>
-                    <Fld label="Taxa de aprovação L-1A / O-1A" fkey="approvalRateL1aO1a" placeholder="96%"/>
-                    <Fld label="Tagline do rodapé" fkey="footerTagline" type="textarea"/>
-                    <Fld label="Copyright do rodapé" fkey="footerCopyright" placeholder="© 2026 Empresa • Todos os direitos reservados"/>
-                    <Fld label="Endereço do rodapé" fkey="footerAddress" placeholder="CNPJ: ... • Endereço..."/>
-                    <Fld label="Outros Serviços do rodapé" fkey="footerServices" type="textarea" placeholder={"Cidadania Portuguesa\nCidadania Espanhola\nCidadania Italiana"}/>
+                    <F label="Taxa de aprovação EB-2 NIW / EB-1A" fkey="approvalRateEbNiwEb1a" placeholder="82%" form={form} setForm={setForm}/>
+                    <F label="Taxa de aprovação L-1A / O-1A" fkey="approvalRateL1aO1a" placeholder="96%" form={form} setForm={setForm}/>
+                    <F label="Tagline do rodapé" fkey="footerTagline" type="textarea" form={form} setForm={setForm}/>
+                    <F label="Copyright do rodapé" fkey="footerCopyright" placeholder="© 2026 Empresa • Todos os direitos reservados" form={form} setForm={setForm}/>
+                    <F label="Endereço do rodapé" fkey="footerAddress" placeholder="CNPJ: ... • Endereço..." form={form} setForm={setForm}/>
+                    <F label="Outros Serviços do rodapé" fkey="footerServices" type="textarea" placeholder={"Cidadania Portuguesa\nCidadania Espanhola\nCidadania Italiana"} form={form} setForm={setForm}/>
                     <p className="text-xs text-gray-400 -mt-2">Um serviço por linha</p>
                     <div className="flex items-center gap-3">
                       <label className="text-sm font-medium text-gray-300">Rodapé escuro</label>
@@ -579,13 +576,13 @@ const SuperAdmin = () => {
                       </button>
                       <span className="text-xs text-gray-400">{form.footerDark ? 'Escuro (navy)' : 'Claro (creme)'}</span>
                     </div>
-                    <Fld label="GTM ID" fkey="gtmId" placeholder="GTM-XXXXXXX"/>
+                    <F label="GTM ID" fkey="gtmId" placeholder="GTM-XXXXXXX" form={form} setForm={setForm}/>
                   </>
                 )}
 
                 {tab === 'team' && (
                   <>
-                    <Fld label="Nomes dos responsáveis (separados por vírgula)" fkey="assignees" placeholder="Amanda, Julia, Maria"/>
+                    <F label="Nomes dos responsáveis (separados por vírgula)" fkey="assignees" placeholder="Amanda, Julia, Maria" form={form} setForm={setForm}/>
                     <p className="text-xs text-gray-400 mt-1">Aparecem no dropdown de responsável no Admin</p>
                   </>
                 )}
