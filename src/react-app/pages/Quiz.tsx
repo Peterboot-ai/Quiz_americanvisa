@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { useTenant } from '@/react-app/contexts/TenantContext';
 
 const Quiz = () => {
-  const { tenant, slug } = useTenant();
+  const { tenant, slug, loading } = useTenant();
   const basePath = slug ? `/p/${slug}` : '/quiz';
+
+  if (loading) return null;
   const [phase, setPhase] = useState('hero');
   const [qIdx, setQIdx] = useState(0);
   const [ans, setAns] = useState<Record<string, string>>({});
@@ -499,8 +501,8 @@ const Quiz = () => {
   const flagRedHex = t?.flagRed ?? '#C41E3A';
 
   // Dynamic tenant data
-  const logoUrl = tenant?.assets?.logoUrl ?? 'https://019c350b-7614-7690-9325-9a7fb6cd4609.mochausercontent.com/4.png';
-  const footerLogoUrl = tenant?.assets?.logoLight ?? 'https://019c3d04-0273-74b5-a5e8-d649f785d1fc.mochausercontent.com/2.png';
+  const logoUrl = tenant?.assets?.logoUrl ?? (slug ? null : 'https://019c350b-7614-7690-9325-9a7fb6cd4609.mochausercontent.com/4.png');
+  const footerLogoUrl = tenant?.assets?.logoLight ?? (slug ? null : 'https://019c3d04-0273-74b5-a5e8-d649f785d1fc.mochausercontent.com/2.png');
   const waPhone = tenant?.contact?.whatsapp ?? '554197177910';
   const contactEmail = tenant?.contact?.email ?? 'contato@unlockedtravel.com.br';
   const contactInstagram = tenant?.contact?.instagram ?? '@ukconsultoriamigratoria';
@@ -578,11 +580,11 @@ const Quiz = () => {
         <div className="texture"/>
 
         <div style={{position:'absolute',top:0,left:0,right:0,padding:'1.3rem 5%',display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:10,borderBottom:'1px solid rgba(0,0,0,.06)',flexWrap:'wrap',gap:'.8rem',backgroundColor:creamHex}}>
-          <img
+          {logoUrl && <img
             src={logoUrl}
             alt={tenantName}
             style={{height:'clamp(35px,8vw,50px)',width:'auto',objectFit:'contain'}}
-          />
+          />}
           {(phase==='quiz'||phase==='ready'||phase==='done') && (
             <button 
               onClick={reset} 
@@ -860,13 +862,13 @@ const Quiz = () => {
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(250px, 1fr))',gap:'2rem',marginBottom:'2rem'}}>
             {/* Coluna 1: Empresa */}
             <div style={{display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center'}}>
-              <div style={{marginBottom:'1rem'}}>
+              {footerLogoUrl && <div style={{marginBottom:'1rem'}}>
                 <img
                   src={footerLogoUrl}
                   alt={tenantName}
                   style={{height:80,width:'auto'}}
                 />
-              </div>
+              </div>}
               <p style={{fontSize:'.875rem',color:'rgba(255,255,255,0.6)',lineHeight:1.6}}>
                 {tenant?.copy?.footerTagline ?? 'Consultoria especializada em processos migratórios e estratégias de acúmulo de milhas aéreas.'}
               </p>
