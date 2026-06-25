@@ -27,18 +27,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     `)
     .order('created_at', { ascending: false });
 
-  if (auth.role === 'super_admin' && tenantSlug) {
-    // Super admin acessando admin de um tenant específico — filtra por slug
+  if (auth.role === 'super_admin') {
+    if (!tenantSlug) {
+      // Super admin sem ?tenant= — bloqueia para evitar vazar todos os leads
+      return res.status(400).json({ success: false, error: 'Parâmetro tenant obrigatório' });
+    }
     const { data: tenantRow } = await supabase
       .from('tenants')
       .select('id')
       .eq('slug', tenantSlug)
       .eq('active', true)
       .single();
-    if (tenantRow) {
-      query = query.eq('tenant_id', tenantRow.id);
+    if (!tenantRow) {
+      // Slug inválido — bloqueia, nunca retorna tudo
+      return res.status(404).json({ success: false, error: 'Tenant não encontrado' });
     }
-  } else if (auth.role !== 'super_admin' && auth.tenant) {
+    query = query.eq('tenant_id', tenantRow.id);
+  } else if (auth.tenant) {
     // partner_admin sempre vê só o próprio tenant
     query = query.eq('tenant_id', auth.tenant.id);
   }

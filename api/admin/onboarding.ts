@@ -9,8 +9,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const auth = await requireAuth(req, res);
   if (!auth) return;
 
-  // Resolve the tenant for this request
-  const tenant = auth.tenant ?? await resolveTenant(req);
+  // Resolve tenant: super_admin exige ?tenant=slug explícito
+  let tenant = auth.tenant;
+  if (auth.role === 'super_admin') {
+    const tenantSlug = req.query.tenant as string | undefined;
+    if (!tenantSlug) return res.status(400).json({ error: 'Parâmetro tenant obrigatório' });
+    const { data: tenantRow } = await supabase.from('tenants').select('id, slug, name').eq('slug', tenantSlug).eq('active', true).single();
+    if (!tenantRow) return res.status(404).json({ error: 'Tenant não encontrado' });
+    tenant = tenantRow as typeof tenant;
+  }
   if (!tenant) return res.status(404).json({ error: 'Tenant não encontrado' });
 
   // Fetch full tenant row (including secrets we need to check, but won't expose)
