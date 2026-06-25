@@ -12,6 +12,7 @@ import {
 } from '@/react-app/components/ui/table';
 import { CriteriaModal } from '@/react-app/components/CriteriaModal';
 import { LeadDetailModal } from '@/react-app/components/LeadDetailModal';
+import { OnboardingChecklist } from '@/react-app/components/OnboardingChecklist';
 import { useTenant } from '@/react-app/contexts/TenantContext';
 import * as XLSX from 'xlsx';
 
@@ -61,6 +62,13 @@ const Admin = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState<number | null>(null);
+  const [onboarding, setOnboarding] = useState<{
+    isComplete: boolean;
+    completedCount: number;
+    totalCount: number;
+    steps: Array<{ key: string; label: string; description: string; done: boolean }>;
+  } | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   const statusOptions = [
     { value: 'novo', label: 'Novo', color: 'bg-blue-100 text-blue-800' },
@@ -104,6 +112,19 @@ const Admin = () => {
   useEffect(() => {
     if (session) {
       fetchLeads();
+      // Check onboarding status
+      fetch('/api/admin/onboarding', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            setOnboarding(data);
+            // Show checklist if setup is incomplete
+            if (!data.isComplete) setShowOnboarding(true);
+          }
+        })
+        .catch(() => {/* non-blocking */});
     } else {
       setLoading(false);
     }
@@ -375,6 +396,19 @@ const Admin = () => {
             </Button>
           </div>
         </div>
+
+        {/* Onboarding checklist */}
+        {showOnboarding && onboarding && !onboarding.isComplete && (
+          <div className="mb-6">
+            <OnboardingChecklist
+              completedCount={onboarding.completedCount}
+              totalCount={onboarding.totalCount}
+              steps={onboarding.steps}
+              tenantName={tenant?.name ?? 'Admin'}
+              onDismiss={() => setShowOnboarding(false)}
+            />
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-6 gap-4 mb-6">
