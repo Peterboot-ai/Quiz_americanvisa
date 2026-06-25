@@ -104,6 +104,7 @@ const Admin = () => {
   };
 
   useEffect(() => {
+    console.log('[Admin] session changed:', session ? `token=${session.access_token?.slice(0,20)}...` : 'null');
     if (session?.access_token) {
       const token = session.access_token;
       fetchLeads(token);
