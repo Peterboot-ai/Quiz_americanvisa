@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/react-app/components/ui/card';
 import { Button } from '@/react-app/components/ui/button';
 import { supabase } from '@/react-app/lib/supabase';
@@ -31,6 +31,30 @@ interface TenantUser {
   role: string;
   created_at: string;
 }
+
+type FormState = Record<string, unknown>;
+type SetForm = React.Dispatch<React.SetStateAction<FormState>>;
+
+const F = ({ label, fkey, type = 'text', placeholder = '', form, setForm }: { label: string; fkey: string; type?: string; placeholder?: string; form: FormState; setForm: SetForm }) => (
+  <div className="mb-3">
+    <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+    {type === 'checkbox' ? (
+      <input type="checkbox" checked={!!form[fkey]} onChange={e => setForm(f => ({ ...f, [fkey]: e.target.checked }))} className="w-4 h-4" />
+    ) : type === 'textarea' ? (
+      <textarea value={String(form[fkey] ?? '')} onChange={e => setForm(f => ({ ...f, [fkey]: e.target.value }))} placeholder={placeholder} className="w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 h-20 resize-none"/>
+    ) : (
+      <input type={type} value={String(form[fkey] ?? '')} onChange={e => setForm(f => ({ ...f, [fkey]: e.target.value }))} placeholder={placeholder} className="w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"/>
+    )}
+  </div>
+);
+
+const Color = ({ label, fkey, form, setForm }: { label: string; fkey: string; form: FormState; setForm: SetForm }) => (
+  <div className="flex items-center gap-2 mb-2">
+    <input type="color" value={String(form[fkey] ?? '#000000')} onChange={e => setForm(f => ({ ...f, [fkey]: e.target.value }))} className="w-8 h-8 rounded cursor-pointer border"/>
+    <input type="text" value={String(form[fkey] ?? '')} onChange={e => setForm(f => ({ ...f, [fkey]: e.target.value }))} className="w-28 px-2 py-1 border rounded text-xs font-mono"/>
+    <span className="text-xs text-gray-500">{label}</span>
+  </div>
+);
 
 const SuperAdmin = () => {
   const [session, setSession] = useState<{ access_token: string; user: { email: string } } | null>(null);
@@ -383,26 +407,8 @@ const SuperAdmin = () => {
     );
   }
 
-  const F = ({ label, fkey, type = 'text', placeholder = '' }: { label: string; fkey: string; type?: string; placeholder?: string }) => (
-    <div className="mb-3">
-      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
-      {type === 'checkbox' ? (
-        <input type="checkbox" checked={!!form[fkey]} onChange={e => setForm(f => ({ ...f, [fkey]: e.target.checked }))} className="w-4 h-4" />
-      ) : type === 'textarea' ? (
-        <textarea value={String(form[fkey] ?? '')} onChange={e => setForm(f => ({ ...f, [fkey]: e.target.value }))} placeholder={placeholder} className="w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 h-20 resize-none"/>
-      ) : (
-        <input type={type} value={String(form[fkey] ?? '')} onChange={e => setForm(f => ({ ...f, [fkey]: e.target.value }))} placeholder={placeholder} className="w-full px-3 py-2 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"/>
-      )}
-    </div>
-  );
-
-  const Color = ({ label, fkey }: { label: string; fkey: string }) => (
-    <div className="flex items-center gap-2 mb-2">
-      <input type="color" value={String(form[fkey] ?? '#000000')} onChange={e => setForm(f => ({ ...f, [fkey]: e.target.value }))} className="w-8 h-8 rounded cursor-pointer border"/>
-      <input type="text" value={String(form[fkey] ?? '')} onChange={e => setForm(f => ({ ...f, [fkey]: e.target.value }))} className="w-28 px-2 py-1 border rounded text-xs font-mono"/>
-      <span className="text-xs text-gray-500">{label}</span>
-    </div>
-  );
+  const Fld = (props: Omit<React.ComponentProps<typeof F>, 'form' | 'setForm'>) => <F {...props} form={form} setForm={setForm} />;
+  const Clr = (props: Omit<React.ComponentProps<typeof Color>, 'form' | 'setForm'>) => <Color {...props} form={form} setForm={setForm} />;
 
   const switchTab = (t: Tab) => {
     setTab(t);
@@ -508,18 +514,18 @@ const SuperAdmin = () => {
               <CardContent className="p-6">
                 {tab === 'info' && (
                   <>
-                    <F label="Nome" fkey="name"/>
-                    <F label="Nome legal" fkey="legal_name"/>
+                    <Fld label="Nome" fkey="name"/>
+                    <Fld label="Nome legal" fkey="legal_name"/>
                     <div className="mb-3 flex items-center gap-2">
                       <input type="checkbox" checked={!!form.active} onChange={e => setForm(f => ({ ...f, active: e.target.checked }))} className="w-4 h-4"/>
                       <label className="text-sm text-gray-700">Ativo</label>
                     </div>
-                    <F label="Domínios (separados por vírgula)" fkey="domains" placeholder="dominio.com.br, www.dominio.com.br"/>
-                    <F label="Domínio de e-mail permitido" fkey="allowed_email_domain" placeholder="@empresa.com.br"/>
-                    <F label="E-mail remetente" fkey="sender_email" type="email"/>
-                    <F label="Nome remetente" fkey="sender_name"/>
-                    <F label="Destinatários do relatório (vírgula)" fkey="report_recipients" placeholder="a@empresa.com, b@empresa.com"/>
-                    <F label="Chave Brevo (deixe em branco para não alterar)" fkey="brevo_api_key" type="password"/>
+                    <Fld label="Domínios (separados por vírgula)" fkey="domains" placeholder="dominio.com.br, www.dominio.com.br"/>
+                    <Fld label="Domínio de e-mail permitido" fkey="allowed_email_domain" placeholder="@empresa.com.br"/>
+                    <Fld label="E-mail remetente" fkey="sender_email" type="email"/>
+                    <Fld label="Nome remetente" fkey="sender_name"/>
+                    <Fld label="Destinatários do relatório (vírgula)" fkey="report_recipients" placeholder="a@empresa.com, b@empresa.com"/>
+                    <Fld label="Chave Brevo (deixe em branco para não alterar)" fkey="brevo_api_key" type="password"/>
                   </>
                 )}
 
@@ -532,35 +538,35 @@ const SuperAdmin = () => {
                         {generatingPalette ? '⏳ Analisando logo...' : '🎨 Gerar paleta com IA'}
                       </Button>
                     </div>
-                    <Color label="Navy (cor principal)" fkey="navy"/>
-                    <Color label="Navy Alt" fkey="navyAlt"/>
-                    <Color label="Gold (destaque)" fkey="gold"/>
-                    <Color label="Gold Alt" fkey="goldAlt"/>
-                    <Color label="Cream (fundo)" fkey="cream"/>
-                    <Color label="Cream Alt" fkey="creamAlt"/>
-                    <Color label="Flag Blue (barra bandeira)" fkey="flagBlue"/>
-                    <Color label="Flag Red (barra bandeira)" fkey="flagRed"/>
+                    <Clr label="Navy (cor principal)" fkey="navy"/>
+                    <Clr label="Navy Alt" fkey="navyAlt"/>
+                    <Clr label="Gold (destaque)" fkey="gold"/>
+                    <Clr label="Gold Alt" fkey="goldAlt"/>
+                    <Clr label="Cream (fundo)" fkey="cream"/>
+                    <Clr label="Cream Alt" fkey="creamAlt"/>
+                    <Clr label="Flag Blue (barra bandeira)" fkey="flagBlue"/>
+                    <Clr label="Flag Red (barra bandeira)" fkey="flagRed"/>
                   </>
                 )}
 
                 {tab === 'contact' && (
                   <>
-                    <F label="WhatsApp (só números, ex: 554197177910)" fkey="whatsapp"/>
-                    <F label="Telefone" fkey="phone"/>
-                    <F label="E-mail de contato" fkey="email" type="email"/>
-                    <F label="Instagram (ex: @empresa)" fkey="instagram"/>
-                    <F label="Website (ex: empresa.com.br)" fkey="website"/>
+                    <Fld label="WhatsApp (só números, ex: 554197177910)" fkey="whatsapp"/>
+                    <Fld label="Telefone" fkey="phone"/>
+                    <Fld label="E-mail de contato" fkey="email" type="email"/>
+                    <Fld label="Instagram (ex: @empresa)" fkey="instagram"/>
+                    <Fld label="Website (ex: empresa.com.br)" fkey="website"/>
                   </>
                 )}
 
                 {tab === 'copy' && (
                   <>
-                    <F label="Taxa de aprovação EB-2 NIW / EB-1A" fkey="approvalRateEbNiwEb1a" placeholder="82%"/>
-                    <F label="Taxa de aprovação L-1A / O-1A" fkey="approvalRateL1aO1a" placeholder="96%"/>
-                    <F label="Tagline do rodapé" fkey="footerTagline" type="textarea"/>
-                    <F label="Copyright do rodapé" fkey="footerCopyright" placeholder="© 2026 Empresa • Todos os direitos reservados"/>
-                    <F label="Endereço do rodapé" fkey="footerAddress" placeholder="CNPJ: ... • Endereço..."/>
-                    <F label="Outros Serviços do rodapé" fkey="footerServices" type="textarea" placeholder={"Cidadania Portuguesa\nCidadania Espanhola\nCidadania Italiana"}/>
+                    <Fld label="Taxa de aprovação EB-2 NIW / EB-1A" fkey="approvalRateEbNiwEb1a" placeholder="82%"/>
+                    <Fld label="Taxa de aprovação L-1A / O-1A" fkey="approvalRateL1aO1a" placeholder="96%"/>
+                    <Fld label="Tagline do rodapé" fkey="footerTagline" type="textarea"/>
+                    <Fld label="Copyright do rodapé" fkey="footerCopyright" placeholder="© 2026 Empresa • Todos os direitos reservados"/>
+                    <Fld label="Endereço do rodapé" fkey="footerAddress" placeholder="CNPJ: ... • Endereço..."/>
+                    <Fld label="Outros Serviços do rodapé" fkey="footerServices" type="textarea" placeholder={"Cidadania Portuguesa\nCidadania Espanhola\nCidadania Italiana"}/>
                     <p className="text-xs text-gray-400 -mt-2">Um serviço por linha</p>
                     <div className="flex items-center gap-3">
                       <label className="text-sm font-medium text-gray-300">Rodapé escuro</label>
@@ -573,13 +579,13 @@ const SuperAdmin = () => {
                       </button>
                       <span className="text-xs text-gray-400">{form.footerDark ? 'Escuro (navy)' : 'Claro (creme)'}</span>
                     </div>
-                    <F label="GTM ID" fkey="gtmId" placeholder="GTM-XXXXXXX"/>
+                    <Fld label="GTM ID" fkey="gtmId" placeholder="GTM-XXXXXXX"/>
                   </>
                 )}
 
                 {tab === 'team' && (
                   <>
-                    <F label="Nomes dos responsáveis (separados por vírgula)" fkey="assignees" placeholder="Amanda, Julia, Maria"/>
+                    <Fld label="Nomes dos responsáveis (separados por vírgula)" fkey="assignees" placeholder="Amanda, Julia, Maria"/>
                     <p className="text-xs text-gray-400 mt-1">Aparecem no dropdown de responsável no Admin</p>
                   </>
                 )}
