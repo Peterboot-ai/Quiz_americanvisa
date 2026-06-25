@@ -42,6 +42,7 @@ export function generateEmailHTML(data: EmailData): string {
   const c = tenant.contact;
   const copy = tenant.copy;
   const emailGold = t.goldEmail || t.gold;
+  const emailNavy = t.navyEmail || t.navy;
 
   const firstName = data.name.split(' ')[0];
   const primaryVisaName = visaNames[data.primary_visa] || data.primary_visa;
@@ -291,7 +292,7 @@ export function generateEmailHTML(data: EmailData): string {
 
           <!-- STATS -->
           <tr><td style="padding:5px 40px 5px;" class="mobile-pad">
-            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:${t.navy}; border-radius:3px;">
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:${emailNavy}; border-radius:3px;">
               <tr>
                 <td style="padding:22px 15px; text-align:center; vertical-align:top;" width="50%" class="stat-col">
                   <p style="margin:0 0 3px; font-family:Georgia,serif; font-size:28px; font-weight:bold; color:${emailGold};">${approvalEbNiw}</p>
@@ -359,7 +360,7 @@ export function generateEmailHTML(data: EmailData): string {
           <tr>
             <td style="padding:25px 40px; text-align:center; background:rgba(27,37,65,0.03);" class="mobile-pad">
               <p style="margin:0 0 5px; font-family:Georgia,serif; font-size:16px; font-weight:bold; letter-spacing:2px; color:${t.navy};">${tenant.name.toUpperCase()}</p>
-              <p style="margin:0 0 12px; font-family:Georgia,serif; font-size:10px; letter-spacing:3px; color:${emailGold}; text-transform:uppercase;">Consultoria Migratória</p>
+              ${copy.footerTagline ? `<p style="margin:0 0 12px; font-family:Georgia,serif; font-size:10px; letter-spacing:3px; color:${emailGold}; text-transform:uppercase;">${copy.footerTagline}</p>` : ''}
               ${c.phone ? `<p style="margin:0 0 5px; font-family:Georgia,serif; font-size:12px; color:#8A8890;">${c.phone}</p>` : ''}
               <p style="margin:8px 0 0; font-family:Georgia,serif; font-size:11px; color:#B0AEB5; line-height:1.6;">
                 Você recebeu este e-mail porque completou nosso teste de elegibilidade.<br>

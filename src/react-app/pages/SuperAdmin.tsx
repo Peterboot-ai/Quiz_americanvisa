@@ -175,6 +175,7 @@ const SuperAdmin = () => {
       flagBlue: t.theme?.flagBlue ?? '#1B3A6B',
       flagRed: t.theme?.flagRed ?? '#C41E3A',
       goldEmail: t.theme?.goldEmail ?? '',
+      navyEmail: t.theme?.navyEmail ?? '',
       // contact
       whatsapp: (t.contact as Record<string, string>)?.whatsapp ?? '',
       phone: (t.contact as Record<string, string>)?.phone ?? '',
@@ -221,6 +222,7 @@ const SuperAdmin = () => {
           cream: form.cream, creamAlt: form.creamAlt,
           flagBlue: form.flagBlue, flagRed: form.flagRed,
           goldEmail: form.goldEmail,
+          navyEmail: form.navyEmail,
         };
       } else if (tab === 'contact') {
         body.contact = {
@@ -546,6 +548,7 @@ const SuperAdmin = () => {
                     <Color label="Flag Blue (barra bandeira)" fkey="flagBlue" form={form} setForm={setForm}/>
                     <Color label="Flag Red (barra bandeira)" fkey="flagRed" form={form} setForm={setForm}/>
                     <Color label="Gold do e-mail (deixe vazio para usar o Gold acima)" fkey="goldEmail" form={form} setForm={setForm}/>
+                    <Color label="Navy do e-mail (bloco de stats — deixe vazio para usar o Navy acima)" fkey="navyEmail" form={form} setForm={setForm}/>
                   </>
                 )}
 
