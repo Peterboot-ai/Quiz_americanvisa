@@ -6,6 +6,7 @@ interface LeadDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   leadId: number | null;
+  accessToken: string;
 }
 
 const answerLabels: Record<string, Record<string, string>> = {
@@ -127,7 +128,7 @@ function translateAnswer(field: string, value: string): string {
   return answerLabels[field]?.[value] || value;
 }
 
-export function LeadDetailModal({ isOpen, onClose, leadId }: LeadDetailModalProps) {
+export function LeadDetailModal({ isOpen, onClose, leadId, accessToken }: LeadDetailModalProps) {
   const [lead, setLead] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
@@ -138,7 +139,9 @@ export function LeadDetailModal({ isOpen, onClose, leadId }: LeadDetailModalProp
     }
 
     setLoading(true);
-    fetch(`/api/admin/leads/${leadId}`)
+    fetch(`/api/admin/leads/${leadId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {

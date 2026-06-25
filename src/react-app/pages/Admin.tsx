@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '@getmocha/users-service/react';
+import { createClient } from '@supabase/supabase-js';
 import { Card, CardContent } from '@/react-app/components/ui/card';
 import { Button } from '@/react-app/components/ui/button';
 import {
@@ -12,7 +12,13 @@ import {
 } from '@/react-app/components/ui/table';
 import { CriteriaModal } from '@/react-app/components/CriteriaModal';
 import { LeadDetailModal } from '@/react-app/components/LeadDetailModal';
+import { useTenant } from '@/react-app/contexts/TenantContext';
 import * as XLSX from 'xlsx';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY,
+);
 
 interface Lead {
   id: number;
@@ -27,7 +33,7 @@ interface Lead {
   l1a_total: number;
   o1a_met: number;
   o1a_total: number;
-  l1a_risk: number;
+  l1a_risk: boolean;
   company_size: string;
   notes: string;
   status: string;
@@ -38,7 +44,9 @@ interface Lead {
 }
 
 const Admin = () => {
-  const { user, isPending, redirectToLogin, logout } = useAuth();
+  const { tenant } = useTenant();
+  const [session, setSession] = useState<{ access_token: string; user: { email: string } } | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -59,21 +67,33 @@ const Admin = () => {
     { value: 'transferido', label: 'Transferido', color: 'bg-purple-100 text-purple-800' },
   ];
 
+  // Supabase Auth: monitor session
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session as typeof session & { user: { email: string } });
+      setAuthLoading(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session as typeof session & { user: { email: string } });
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const authHeaders = () => ({
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${session?.access_token ?? ''}`,
+  });
+
   const fetchLeads = async () => {
+    if (!session) return;
     try {
-      const response = await fetch('/api/admin/leads');
+      const response = await fetch('/api/admin/leads', { headers: authHeaders() });
       const data = await response.json();
-      
-      // Security: Check if access was denied
-      if (response.status === 403 || data.unauthorized) {
-        console.error('[SECURITY] Access denied by server');
-        await logout();
+      if (response.status === 401 || response.status === 403) {
+        await supabase.auth.signOut();
         return;
       }
-      
-      if (data.success) {
-        setLeads(data.leads);
-      }
+      if (data.success) setLeads(data.leads);
     } catch (error) {
       console.error('Error fetching leads:', error);
     } finally {
@@ -82,18 +102,18 @@ const Admin = () => {
   };
 
   useEffect(() => {
-    if (user) {
+    if (session) {
       fetchLeads();
     } else {
       setLoading(false);
     }
-  }, [user]);
+  }, [session]);
 
   const updateStatus = async (id: number, status: string) => {
     try {
       await fetch(`/api/admin/leads/${id}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({ status }),
       });
       fetchLeads();
@@ -106,7 +126,7 @@ const Admin = () => {
     try {
       await fetch(`/api/admin/leads/${id}/assigned`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         body: JSON.stringify({ assigned_to }),
       });
       fetchLeads();
@@ -116,20 +136,14 @@ const Admin = () => {
   };
 
   const deleteLead = async (id: number, name: string) => {
-    if (!confirm(`Tem certeza que deseja excluir o lead de ${name}?\n\nEsta ação não pode ser desfeita.`)) {
-      return;
-    }
-
+    if (!confirm(`Tem certeza que deseja excluir o lead de ${name}?\n\nEsta ação não pode ser desfeita.`)) return;
     try {
       const response = await fetch(`/api/admin/leads/${id}`, {
         method: 'DELETE',
+        headers: authHeaders(),
       });
-
-      if (response.ok) {
-        fetchLeads();
-      } else {
-        alert('Erro ao excluir lead. Tente novamente.');
-      }
+      if (response.ok) fetchLeads();
+      else alert('Erro ao excluir lead. Tente novamente.');
     } catch (error) {
       console.error('Error deleting lead:', error);
       alert('Erro ao excluir lead. Tente novamente.');
@@ -138,36 +152,20 @@ const Admin = () => {
 
   const getStatusDisplay = (status: string) => {
     const option = statusOptions.find(opt => opt.value === status);
-    if (!option) return { label: 'Novo', color: 'bg-blue-100 text-blue-800' };
-    return option;
+    return option ?? { label: 'Novo', color: 'bg-blue-100 text-blue-800' };
   };
 
   const showCriteriaDetails = async (leadId: number, visaType: 'eb2niw' | 'eb1a' | 'l1a' | 'o1a') => {
     try {
-      const response = await fetch(`/api/admin/leads/${leadId}`);
+      const response = await fetch(`/api/admin/leads/${leadId}`, { headers: authHeaders() });
       const data = await response.json();
-      
       if (data.success && data.lead.visa_criteria) {
         const criteria = data.lead.visa_criteria[visaType];
         const lead = leads.find(l => l.id === leadId);
         if (!lead) return;
-
-        const metCount = visaType === 'eb2niw' ? lead.eb2niw_met :
-                        visaType === 'eb1a' ? lead.eb1a_met :
-                        visaType === 'l1a' ? lead.l1a_met :
-                        lead.o1a_met;
-        
-        const totalCount = visaType === 'eb2niw' ? lead.eb2niw_total :
-                          visaType === 'eb1a' ? lead.eb1a_total :
-                          visaType === 'l1a' ? lead.l1a_total :
-                          lead.o1a_total;
-
-        setSelectedCriteria({
-          visaType,
-          criteria,
-          met: metCount,
-          total: totalCount,
-        });
+        const metCount   = visaType === 'eb2niw' ? lead.eb2niw_met : visaType === 'eb1a' ? lead.eb1a_met : visaType === 'l1a' ? lead.l1a_met : lead.o1a_met;
+        const totalCount = visaType === 'eb2niw' ? lead.eb2niw_total : visaType === 'eb1a' ? lead.eb1a_total : visaType === 'l1a' ? lead.l1a_total : lead.o1a_total;
+        setSelectedCriteria({ visaType, criteria, met: metCount, total: totalCount });
         setModalOpen(true);
       }
     } catch (error) {
@@ -176,105 +174,68 @@ const Admin = () => {
   };
 
   const handleLogin = async () => {
-    console.log('Login button clicked');
     try {
-      console.log('Calling redirectToLogin...');
-      await redirectToLogin();
-      console.log('redirectToLogin completed');
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
     } catch (error) {
-      console.error('Error during login redirect:', error);
-      alert('Erro ao tentar fazer login. Por favor, tente novamente ou entre em contato com o suporte.');
+      console.error('Error during login:', error);
+      alert('Erro ao tentar fazer login. Por favor, tente novamente.');
     }
   };
 
-  // Check if lead is a potential client
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
   const isPotentialClient = (lead: Lead): boolean => {
-    // EB-2 NIW or EB-1A: atingiu 4 ou mais
-    if (lead.eb2niw_met >= 4 || lead.eb1a_met >= 4) {
-      return true;
-    }
-    // O-1A: atingiu 4 ou mais
-    if (lead.o1a_met >= 4) {
-      return true;
-    }
-    // L-1A: empresa com 10+ funcionários e 3+ anos experiência
-    if (lead.l1a_risk === 0 && lead.l1a_met >= 3) {
-      return true;
-    }
+    if (lead.eb2niw_met >= 4 || lead.eb1a_met >= 4) return true;
+    if (lead.o1a_met >= 4) return true;
+    if (!lead.l1a_risk && lead.l1a_met >= 3) return true;
     return false;
   };
 
-  // Get eligibility level for a lead
   const getEligibility = (lead: Lead): 'alta' | 'media' | 'baixa' => {
-    // Alta: é potencial cliente
     if (isPotentialClient(lead)) return 'alta';
-    
-    // Média: está próximo (3 critérios em qualquer categoria)
-    if (lead.eb2niw_met >= 3 || lead.eb1a_met >= 3 || lead.o1a_met >= 3 || lead.l1a_met >= 2) {
-      return 'media';
-    }
-    
-    // Baixa: menos que isso
+    if (lead.eb2niw_met >= 3 || lead.eb1a_met >= 3 || lead.o1a_met >= 3 || lead.l1a_met >= 2) return 'media';
     return 'baixa';
   };
 
-  // Get purpose label
   const getPurposeLabel = (purpose: string | null | undefined): string => {
     const purposes: Record<string, string> = {
-      'serious': 'Interesse real',
-      'opportunities': 'Avaliando opções',
-      'curious': 'Apenas curioso',
-      'exploring': 'Entender chances',
+      serious: 'Interesse real', opportunities: 'Avaliando opções',
+      curious: 'Apenas curioso', exploring: 'Entender chances',
     };
     return purpose && purposes[purpose] ? purposes[purpose] : '-';
   };
 
-  // Get priority label
   const getPriorityLabel = (priority: string | null | undefined): string => {
     const priorities: Record<string, string> = {
-      'urgent': '🔥 Urgente',
-      '6to8months': '⏰ 6-8 meses',
-      'researching': '📚 Pesquisando',
-      'just_knowing': '💡 Conhecendo',
+      urgent: '🔥 Urgente', '6to8months': '⏰ 6-8 meses',
+      researching: '📚 Pesquisando', just_knowing: '💡 Conhecendo',
     };
     return priority && priorities[priority] ? priorities[priority] : '-';
   };
 
-  // Get priority color class
   const getPriorityColor = (priority: string | null | undefined): string => {
     const colors: Record<string, string> = {
-      'urgent': 'bg-red-100 text-red-800',
-      '6to8months': 'bg-orange-100 text-orange-800',
-      'researching': 'bg-blue-100 text-blue-800',
-      'just_knowing': 'bg-gray-100 text-gray-600',
+      urgent: 'bg-red-100 text-red-800', '6to8months': 'bg-orange-100 text-orange-800',
+      researching: 'bg-blue-100 text-blue-800', just_knowing: 'bg-gray-100 text-gray-600',
     };
     return priority && colors[priority] ? colors[priority] : 'bg-gray-100 text-gray-600';
   };
 
-  // Filter leads
   const filteredLeads = leads.filter(lead => {
-    // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      const matchesName = lead.name.toLowerCase().includes(term);
-      const matchesEmail = lead.email.toLowerCase().includes(term);
-      const matchesPhone = lead.phone.includes(term);
-      if (!matchesName && !matchesEmail && !matchesPhone) return false;
+      if (!lead.name.toLowerCase().includes(term) && !lead.email.toLowerCase().includes(term) && !lead.phone.includes(term)) return false;
     }
-    
-    // Status filter
     if (statusFilter !== 'todos' && lead.status !== statusFilter) return false;
-    
-    // Eligibility filter
-    if (eligibilityFilter !== 'todas') {
-      const eligibility = getEligibility(lead);
-      if (eligibility !== eligibilityFilter) return false;
-    }
-    
+    if (eligibilityFilter !== 'todas' && getEligibility(lead) !== eligibilityFilter) return false;
     return true;
   });
 
-  // Calculate statistics
   const stats = {
     total: leads.length,
     alta: leads.filter(l => getEligibility(l) === 'alta').length,
@@ -284,31 +245,18 @@ const Admin = () => {
     transferidos: leads.filter(l => l.status === 'transferido').length,
   };
 
-  // Export to CSV
   const exportToCSV = () => {
     const headers = ['Data', 'Nome', 'Telefone', 'Email', 'EB-2 NIW', 'EB-1A', 'L-1A', 'O-1A', 'Viabilidade', 'Propósito', 'Prioridade', 'Status', 'Responsável'];
     const eligLabels: Record<string, string> = { alta: 'Elegível', media: 'Médio', baixa: 'Não Elegível' };
     const rows = filteredLeads.map(lead => [
-      new Date(lead.created_at).toLocaleDateString('pt-BR'),
-      lead.name,
-      lead.phone,
-      lead.email,
-      `${lead.eb2niw_met}/${lead.eb2niw_total}`,
-      `${lead.eb1a_met}/${lead.eb1a_total}`,
-      `${lead.l1a_met}/${lead.l1a_total}`,
-      `${lead.o1a_met}/${lead.o1a_total}`,
-      eligLabels[getEligibility(lead)] || 'Não Elegível',
-      getPurposeLabel(lead.purpose),
+      new Date(lead.created_at).toLocaleDateString('pt-BR'), lead.name, lead.phone, lead.email,
+      `${lead.eb2niw_met}/${lead.eb2niw_total}`, `${lead.eb1a_met}/${lead.eb1a_total}`,
+      `${lead.l1a_met}/${lead.l1a_total}`, `${lead.o1a_met}/${lead.o1a_total}`,
+      eligLabels[getEligibility(lead)] || 'Não Elegível', getPurposeLabel(lead.purpose),
       getPriorityLabel(lead.priority).replace(/[🔥⏰📚💡]/g, '').trim(),
-      lead.status || 'novo',
-      lead.assigned_to || '-',
+      lead.status || 'novo', lead.assigned_to || '-',
     ]);
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-
+    const csvContent = [headers.join(','), ...rows.map(row => row.map(cell => `"${cell}"`).join(','))].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -316,57 +264,43 @@ const Admin = () => {
     link.click();
   };
 
-  // Export to Excel
   const exportToExcel = () => {
     const headers = ['Data', 'Nome', 'Telefone', 'Email', 'EB-2 NIW', 'EB-1A', 'L-1A', 'O-1A', 'Viabilidade', 'Propósito', 'Prioridade', 'Status', 'Responsável'];
     const eligLabels: Record<string, string> = { alta: 'Elegível', media: 'Médio', baixa: 'Não Elegível' };
     const rows = filteredLeads.map(lead => [
-      new Date(lead.created_at).toLocaleDateString('pt-BR'),
-      lead.name,
-      lead.phone,
-      lead.email,
-      `${lead.eb2niw_met}/${lead.eb2niw_total}`,
-      `${lead.eb1a_met}/${lead.eb1a_total}`,
-      `${lead.l1a_met}/${lead.l1a_total}`,
-      `${lead.o1a_met}/${lead.o1a_total}`,
-      eligLabels[getEligibility(lead)] || 'Não Elegível',
-      getPurposeLabel(lead.purpose),
+      new Date(lead.created_at).toLocaleDateString('pt-BR'), lead.name, lead.phone, lead.email,
+      `${lead.eb2niw_met}/${lead.eb2niw_total}`, `${lead.eb1a_met}/${lead.eb1a_total}`,
+      `${lead.l1a_met}/${lead.l1a_total}`, `${lead.o1a_met}/${lead.o1a_total}`,
+      eligLabels[getEligibility(lead)] || 'Não Elegível', getPurposeLabel(lead.purpose),
       getPriorityLabel(lead.priority).replace(/[🔥⏰📚💡]/g, '').trim(),
-      lead.status || 'novo',
-      lead.assigned_to || '-',
+      lead.status || 'novo', lead.assigned_to || '-',
     ]);
-
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
-    
     XLSX.writeFile(workbook, `leads-${new Date().toISOString().split('T')[0]}.xlsx`);
   };
 
-  // Send test daily report
   const sendTestReport = async () => {
     try {
-      const confirmSend = confirm('Enviar e-mail de teste do relatório diário para toda a equipe?');
-      if (!confirmSend) return;
-
+      if (!confirm('Enviar e-mail de teste do relatório diário para toda a equipe?')) return;
       const response = await fetch('/api/admin/leads/test-daily-report', {
         method: 'POST',
+        headers: authHeaders(),
       });
-      
       const data = await response.json();
-      
-      if (data.success) {
-        alert(`✅ E-mail de teste enviado com sucesso!\n\nLeads de ontem: ${data.leadCount}\nDestinatários: ${data.recipients.length}`);
-      } else {
-        alert(`❌ Erro ao enviar e-mail: ${data.error}`);
-      }
+      if (data.success) alert(`✅ E-mail de teste enviado!\n\nLeads de ontem: ${data.leadCount}\nDestinatários: ${data.recipients.length}`);
+      else alert(`❌ Erro ao enviar e-mail: ${data.error}`);
     } catch (error) {
       console.error('Error sending test report:', error);
       alert('❌ Erro ao enviar e-mail de teste');
     }
   };
 
-  if (isPending) {
+  // Assignees from tenant config (fallback to empty list)
+  const assignees = tenant?.team?.assignees ?? [];
+
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
@@ -377,33 +311,29 @@ const Admin = () => {
     );
   }
 
-  if (!user) {
+  if (!session) {
+    const logoUrl = tenant?.assets?.logoLight || tenant?.assets?.logoUrl || '';
+    const navy = tenant?.theme?.navy || '#1a2847';
     return (
       <div className="min-h-screen flex">
-        {/* Left side - Navy blue with white logo */}
-        <div className="w-1/2 bg-[#1a2847] flex items-center justify-center p-12">
+        <div className="w-1/2 flex items-center justify-center p-12" style={{ backgroundColor: navy }}>
           <div className="max-w-md">
-            <img 
-              src="https://019c350b-7614-7690-9325-9a7fb6cd4609.mochausercontent.com/2.png" 
-              alt="Unlocked" 
-              className="w-full max-w-[400px]"
-            />
+            {logoUrl
+              ? <img src={logoUrl} alt={tenant?.name ?? 'Logo'} className="w-full max-w-[400px]" />
+              : <p className="text-white text-3xl font-bold tracking-widest">{tenant?.name?.toUpperCase() ?? ''}</p>
+            }
           </div>
         </div>
-
-        {/* Right side - White with login */}
         <div className="w-1/2 bg-white flex items-center justify-center p-12">
           <div className="w-full max-w-md">
-            <h1 className="text-3xl font-bold text-[#1a2847] mb-3">
-              Bem-vindo ao Sistema Unlocked
+            <h1 className="text-3xl font-bold mb-3" style={{ color: navy }}>
+              Bem-vindo ao {tenant?.name ?? 'Admin'}
             </h1>
-            <p className="text-gray-600 mb-8">
-              Faça login com sua conta Google corporativa
-            </p>
-            
-            <Button 
+            <p className="text-gray-600 mb-8">Faça login com sua conta Google corporativa</p>
+            <Button
               onClick={handleLogin}
-              className="w-full bg-[#1a2847] hover:bg-[#2a3857] text-white py-6 text-base font-medium flex items-center justify-center gap-3"
+              className="w-full py-6 text-base font-medium flex items-center justify-center gap-3 text-white"
+              style={{ backgroundColor: navy }}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -419,30 +349,7 @@ const Admin = () => {
     );
   }
 
-  // SECURITY: Strict email domain check - must be @unlockedtravel.com.br
-  const userEmail = user.email?.toLowerCase().trim() || '';
-  if (!userEmail.endsWith('@unlockedtravel.com.br')) {
-    console.error(`[SECURITY] Unauthorized email domain blocked in frontend: ${userEmail}`);
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-6">
-        <Card className="w-full max-w-md border-red-200">
-          <CardContent className="pt-6 text-center">
-            <div className="mb-4 text-5xl">🔒</div>
-            <h1 className="text-2xl font-bold text-red-600 mb-4">Acesso Negado</h1>
-            <p className="text-gray-600 mb-4">
-              Apenas contas corporativas <strong>@unlockedtravel.com.br</strong> têm acesso a este painel administrativo.
-            </p>
-            <p className="text-sm text-gray-500 mb-6">
-              Você está logado como: <span className="font-mono text-red-600">{userEmail}</span>
-            </p>
-            <Button onClick={logout} className="w-full bg-red-600 hover:bg-red-700">
-              Sair e Fazer Login com Conta Corporativa
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const userEmail = session.user.email?.toLowerCase().trim() ?? '';
 
   return (
     <div className="min-h-screen bg-[#F0EDE8] p-6">
@@ -450,20 +357,20 @@ const Admin = () => {
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#334155]">Unlocked Admin</h1>
+            <h1 className="text-2xl font-bold text-[#334155]">{tenant?.name ?? ''} Admin</h1>
             <p className="text-sm text-[#64748B]">Portal de Leads</p>
           </div>
           <div className="flex gap-3 items-center">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-[#10B981] flex items-center justify-center text-white font-semibold">
-                {user.email.charAt(0).toUpperCase()}
+                {userEmail.charAt(0).toUpperCase()}
               </div>
               <div className="text-right">
-                <div className="text-sm font-medium text-[#334155]">{user.email.split('@')[0]}</div>
-                <div className="text-xs text-[#64748B]">{user.email}</div>
+                <div className="text-sm font-medium text-[#334155]">{userEmail.split('@')[0]}</div>
+                <div className="text-xs text-[#64748B]">{userEmail}</div>
               </div>
             </div>
-            <Button onClick={logout} variant="outline" size="sm" className="bg-[#F59E0B] hover:bg-[#D97706] text-white border-0">
+            <Button onClick={handleLogout} variant="outline" size="sm" className="bg-[#F59E0B] hover:bg-[#D97706] text-white border-0">
               Sair
             </Button>
           </div>
@@ -471,52 +378,12 @@ const Admin = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-6 gap-4 mb-6">
-          <Card className="bg-white">
-            <CardContent className="p-4">
-              <div className="text-3xl font-bold text-[#334155] mb-1">{stats.total}</div>
-              <div className="text-sm text-[#64748B]">Total Leads</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-white">
-            <CardContent className="p-4">
-              <div className="text-3xl font-bold text-[#10B981] mb-1 flex items-center gap-2">
-                🎉 {stats.alta}
-              </div>
-              <div className="text-sm text-[#64748B]">Alta</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-white">
-            <CardContent className="p-4">
-              <div className="text-3xl font-bold text-[#F59E0B] mb-1 flex items-center gap-2">
-                ⚠️ {stats.media}
-              </div>
-              <div className="text-sm text-[#64748B]">Média</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-white">
-            <CardContent className="p-4">
-              <div className="text-3xl font-bold text-[#EF4444] mb-1 flex items-center gap-2">
-                🚦 {stats.baixa}
-              </div>
-              <div className="text-sm text-[#64748B]">Baixa</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-white">
-            <CardContent className="p-4">
-              <div className="text-3xl font-bold text-[#3B82F6] mb-1 flex items-center gap-2">
-                🆕 {stats.novos}
-              </div>
-              <div className="text-sm text-[#64748B]">Novos</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-white">
-            <CardContent className="p-4">
-              <div className="text-3xl font-bold text-[#10B981] mb-1 flex items-center gap-2">
-                ✅ {stats.transferidos}
-              </div>
-              <div className="text-sm text-[#64748B]">Transferidos</div>
-            </CardContent>
-          </Card>
+          <Card className="bg-white"><CardContent className="p-4"><div className="text-3xl font-bold text-[#334155] mb-1">{stats.total}</div><div className="text-sm text-[#64748B]">Total Leads</div></CardContent></Card>
+          <Card className="bg-white"><CardContent className="p-4"><div className="text-3xl font-bold text-[#10B981] mb-1 flex items-center gap-2">🎉 {stats.alta}</div><div className="text-sm text-[#64748B]">Alta</div></CardContent></Card>
+          <Card className="bg-white"><CardContent className="p-4"><div className="text-3xl font-bold text-[#F59E0B] mb-1 flex items-center gap-2">⚠️ {stats.media}</div><div className="text-sm text-[#64748B]">Média</div></CardContent></Card>
+          <Card className="bg-white"><CardContent className="p-4"><div className="text-3xl font-bold text-[#EF4444] mb-1 flex items-center gap-2">🚦 {stats.baixa}</div><div className="text-sm text-[#64748B]">Baixa</div></CardContent></Card>
+          <Card className="bg-white"><CardContent className="p-4"><div className="text-3xl font-bold text-[#3B82F6] mb-1 flex items-center gap-2">🆕 {stats.novos}</div><div className="text-sm text-[#64748B]">Novos</div></CardContent></Card>
+          <Card className="bg-white"><CardContent className="p-4"><div className="text-3xl font-bold text-[#10B981] mb-1 flex items-center gap-2">✅ {stats.transferidos}</div><div className="text-sm text-[#64748B]">Transferidos</div></CardContent></Card>
         </div>
 
         {/* Filters and Actions */}
@@ -524,21 +391,11 @@ const Admin = () => {
           <div className="flex gap-3 flex-1">
             <div className="flex-1 max-w-sm">
               <label className="block text-sm font-medium text-[#334155] mb-1">Buscar</label>
-              <input
-                type="text"
-                placeholder="Nome, email ou telefone..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-[#CBD5E1] rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
-              />
+              <input type="text" placeholder="Nome, email ou telefone..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full px-4 py-2 border border-[#CBD5E1] rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"/>
             </div>
             <div>
               <label className="block text-sm font-medium text-[#334155] mb-1">Status</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-[#CBD5E1] rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
-              >
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-4 py-2 border border-[#CBD5E1] rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]">
                 <option value="todos">Todos</option>
                 <option value="novo">Novo</option>
                 <option value="transferido">Transferido</option>
@@ -546,11 +403,7 @@ const Admin = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-[#334155] mb-1">Viabilidade</label>
-              <select
-                value={eligibilityFilter}
-                onChange={(e) => setEligibilityFilter(e.target.value)}
-                className="px-4 py-2 border border-[#CBD5E1] rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]"
-              >
+              <select value={eligibilityFilter} onChange={(e) => setEligibilityFilter(e.target.value)} className="px-4 py-2 border border-[#CBD5E1] rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6]">
                 <option value="todas">Todas</option>
                 <option value="alta">Elegível</option>
                 <option value="media">Médio</option>
@@ -559,43 +412,21 @@ const Admin = () => {
             </div>
           </div>
           <div className="flex gap-3">
-            <Button
-              onClick={sendTestReport}
-              className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white flex items-center gap-2"
-            >
-              📧 Testar Relatório
-            </Button>
-            <Button
-              onClick={exportToCSV}
-              className="bg-[#10B981] hover:bg-[#059669] text-white flex items-center gap-2"
-            >
-              📊 Exportar CSV
-            </Button>
-            <Button
-              onClick={exportToExcel}
-              className="bg-[#059669] hover:bg-[#047857] text-white flex items-center gap-2"
-            >
-              📗 Exportar Excel
-            </Button>
-            <Button
-              onClick={fetchLeads}
-              className="bg-[#334155] hover:bg-[#1E293B] text-white flex items-center gap-2"
-            >
-              🔄 Atualizar
-            </Button>
+            <Button onClick={sendTestReport} className="bg-[#8B5CF6] hover:bg-[#7C3AED] text-white flex items-center gap-2">📧 Testar Relatório</Button>
+            <Button onClick={exportToCSV} className="bg-[#10B981] hover:bg-[#059669] text-white flex items-center gap-2">📊 Exportar CSV</Button>
+            <Button onClick={exportToExcel} className="bg-[#059669] hover:bg-[#047857] text-white flex items-center gap-2">📗 Exportar Excel</Button>
+            <Button onClick={fetchLeads} className="bg-[#334155] hover:bg-[#1E293B] text-white flex items-center gap-2">🔄 Atualizar</Button>
           </div>
         </div>
 
         {loading ? (
           <div className="text-center py-12 text-[#5C5A65]">Carregando leads...</div>
         ) : filteredLeads.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center text-[#5C5A65]">
-              {searchTerm || statusFilter !== 'todos' || eligibilityFilter !== 'todas' 
-                ? 'Nenhum lead encontrado com os filtros aplicados' 
-                : 'Nenhum lead encontrado'}
-            </CardContent>
-          </Card>
+          <Card><CardContent className="py-12 text-center text-[#5C5A65]">
+            {searchTerm || statusFilter !== 'todos' || eligibilityFilter !== 'todas'
+              ? 'Nenhum lead encontrado com os filtros aplicados'
+              : 'Nenhum lead encontrado'}
+          </CardContent></Card>
         ) : (
           <Card>
             <CardContent className="p-0">
@@ -622,120 +453,50 @@ const Admin = () => {
                   <TableBody>
                     {filteredLeads.map((lead) => (
                       <TableRow key={lead.id}>
-                        <TableCell className="text-xs py-2">
-                          {new Date(lead.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
-                        </TableCell>
+                        <TableCell className="text-xs py-2">{new Date(lead.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</TableCell>
                         <TableCell className="font-medium text-sm py-2 max-w-[120px]" title={lead.name}>
-  <button
-    onClick={() => { setSelectedLeadId(lead.id); setDetailModalOpen(true); }}
-    className="text-left truncate block w-full hover:text-[#D4A847] hover:underline cursor-pointer transition-colors"
-  >
-    {lead.name}
-  </button>
-</TableCell>
+                          <button onClick={() => { setSelectedLeadId(lead.id); setDetailModalOpen(true); }} className="text-left truncate block w-full hover:text-[#D4A847] hover:underline cursor-pointer transition-colors">
+                            {lead.name}
+                          </button>
+                        </TableCell>
                         <TableCell className="text-xs py-2">{lead.phone}</TableCell>
                         <TableCell className="text-xs py-2 max-w-[140px] truncate" title={lead.email}>{lead.email}</TableCell>
                         <TableCell className="text-center py-2">
-                          <button
-                            onClick={() => showCriteriaDetails(lead.id, 'eb2niw')}
-                            className="text-xs font-semibold hover:text-[#1B2541] hover:underline cursor-pointer transition-colors"
-                          >
-                            {lead.eb2niw_met}/{lead.eb2niw_total}
-                          </button>
+                          <button onClick={() => showCriteriaDetails(lead.id, 'eb2niw')} className="text-xs font-semibold hover:text-[#1B2541] hover:underline cursor-pointer transition-colors">{lead.eb2niw_met}/{lead.eb2niw_total}</button>
                         </TableCell>
                         <TableCell className="text-center py-2">
-                          <button
-                            onClick={() => showCriteriaDetails(lead.id, 'eb1a')}
-                            className="text-xs font-semibold hover:text-[#1B2541] hover:underline cursor-pointer transition-colors"
-                          >
-                            {lead.eb1a_met}/{lead.eb1a_total}
-                          </button>
+                          <button onClick={() => showCriteriaDetails(lead.id, 'eb1a')} className="text-xs font-semibold hover:text-[#1B2541] hover:underline cursor-pointer transition-colors">{lead.eb1a_met}/{lead.eb1a_total}</button>
                         </TableCell>
                         <TableCell className="text-center py-2">
-                          <button
-                            onClick={() => showCriteriaDetails(lead.id, 'l1a')}
-                            className="text-xs font-semibold hover:text-[#1B2541] hover:underline cursor-pointer transition-colors"
-                          >
-                            {lead.l1a_met}/{lead.l1a_total}
-                          </button>
-                          {lead.l1a_risk === 1 && (
-                            <div className="text-[10px] text-yellow-600">⚠️</div>
-                          )}
+                          <button onClick={() => showCriteriaDetails(lead.id, 'l1a')} className="text-xs font-semibold hover:text-[#1B2541] hover:underline cursor-pointer transition-colors">{lead.l1a_met}/{lead.l1a_total}</button>
+                          {lead.l1a_risk && <div className="text-[10px] text-yellow-600">⚠️</div>}
                         </TableCell>
                         <TableCell className="text-center py-2">
-                          <button
-                            onClick={() => showCriteriaDetails(lead.id, 'o1a')}
-                            className="text-xs font-semibold hover:text-[#1B2541] hover:underline cursor-pointer transition-colors"
-                          >
-                            {lead.o1a_met}/{lead.o1a_total}
-                          </button>
+                          <button onClick={() => showCriteriaDetails(lead.id, 'o1a')} className="text-xs font-semibold hover:text-[#1B2541] hover:underline cursor-pointer transition-colors">{lead.o1a_met}/{lead.o1a_total}</button>
                         </TableCell>
                         <TableCell className="text-center py-2">
                           {(() => {
                             const elig = getEligibility(lead);
-                            if (elig === 'alta') return (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-800">
-                                ✅ Elegível
-                              </span>
-                            );
-                            if (elig === 'media') return (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-100 text-yellow-800">
-                                ⚠️ Médio
-                              </span>
-                            );
-                            return (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600">
-                                Não Elegível
-                              </span>
-                            );
+                            if (elig === 'alta') return <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-800">✅ Elegível</span>;
+                            if (elig === 'media') return <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-100 text-yellow-800">⚠️ Médio</span>;
+                            return <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600">Não Elegível</span>;
                           })()}
                         </TableCell>
+                        <TableCell className="py-2"><span className="text-[10px] max-w-[120px] truncate block" title={getPurposeLabel(lead.purpose)}>{getPurposeLabel(lead.purpose)}</span></TableCell>
+                        <TableCell className="py-2"><span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${getPriorityColor(lead.priority)}`}>{getPriorityLabel(lead.priority)}</span></TableCell>
                         <TableCell className="py-2">
-                          <span className="text-[10px] max-w-[120px] truncate block" title={getPurposeLabel(lead.purpose)}>
-                            {getPurposeLabel(lead.purpose)}
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-2">
-                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${getPriorityColor(lead.priority)}`}>
-                            {getPriorityLabel(lead.priority)}
-                          </span>
-                        </TableCell>
-                        <TableCell className="py-2">
-                          <select
-                            value={lead.status || 'novo'}
-                            onChange={(e) => updateStatus(lead.id, e.target.value)}
-                            className={`text-[10px] font-semibold px-2 py-1 rounded-full border-0 cursor-pointer w-full ${getStatusDisplay(lead.status || 'novo').color}`}
-                          >
-                            {statusOptions.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
+                          <select value={lead.status || 'novo'} onChange={(e) => updateStatus(lead.id, e.target.value)} className={`text-[10px] font-semibold px-2 py-1 rounded-full border-0 cursor-pointer w-full ${getStatusDisplay(lead.status || 'novo').color}`}>
+                            {statusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
                           </select>
                         </TableCell>
                         <TableCell className="py-2">
-                          <select
-                            value={lead.assigned_to || ''}
-                            onChange={(e) => updateAssigned(lead.id, e.target.value)}
-                            className="text-[10px] px-2 py-1 rounded border border-gray-300 cursor-pointer bg-white hover:border-gray-400 focus:outline-none focus:ring-1 focus:ring-[#D4A847] w-full"
-                          >
+                          <select value={lead.assigned_to || ''} onChange={(e) => updateAssigned(lead.id, e.target.value)} className="text-[10px] px-2 py-1 rounded border border-gray-300 cursor-pointer bg-white hover:border-gray-400 focus:outline-none focus:ring-1 focus:ring-[#D4A847] w-full">
                             <option value="">-</option>
-                            <option value="Amanda">Amanda</option>
-                            <option value="Julia">Julia</option>
-                            <option value="Lênia">Lênia</option>
-                            <option value="Isabela">Isabela</option>
-                            <option value="Cristiane">Cristiane</option>
+                            {assignees.map((name) => <option key={name} value={name}>{name}</option>)}
                           </select>
                         </TableCell>
                         <TableCell className="py-2">
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => deleteLead(lead.id, lead.name)}
-                            className="text-[10px] px-2 py-1 h-auto"
-                          >
-                            Excluir
-                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => deleteLead(lead.id, lead.name)} className="text-[10px] px-2 py-1 h-auto">Excluir</Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -747,21 +508,10 @@ const Admin = () => {
         )}
 
         {selectedCriteria && (
-          <CriteriaModal
-            isOpen={modalOpen}
-            onClose={() => setModalOpen(false)}
-            visaType={selectedCriteria.visaType}
-            criteria={selectedCriteria.criteria}
-            met={selectedCriteria.met}
-            total={selectedCriteria.total}
-          />
+          <CriteriaModal isOpen={modalOpen} onClose={() => setModalOpen(false)} visaType={selectedCriteria.visaType} criteria={selectedCriteria.criteria} met={selectedCriteria.met} total={selectedCriteria.total} />
         )}
 
-        <LeadDetailModal
-          isOpen={detailModalOpen}
-          onClose={() => setDetailModalOpen(false)}
-          leadId={selectedLeadId}
-        />
+        <LeadDetailModal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} leadId={selectedLeadId} accessToken={session?.access_token ?? ''} />
       </div>
     </div>
   );

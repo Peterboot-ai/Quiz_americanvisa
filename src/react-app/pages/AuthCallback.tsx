@@ -1,24 +1,29 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router';
-import { useAuth } from '@getmocha/users-service/react';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY,
+);
 
 const AuthCallback = () => {
   const navigate = useNavigate();
-  const { exchangeCodeForSessionToken } = useAuth();
 
   useEffect(() => {
-    const handleCallback = async () => {
-      try {
-        await exchangeCodeForSessionToken();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
         navigate('/admin');
-      } catch (error) {
-        console.error('Error during authentication:', error);
-        navigate('/admin');
+      } else {
+        // Exchange the code from the URL for a session
+        supabase.auth.exchangeCodeForSession(window.location.href).then(() => {
+          navigate('/admin');
+        }).catch(() => {
+          navigate('/admin');
+        });
       }
-    };
-
-    handleCallback();
-  }, [exchangeCodeForSessionToken, navigate]);
+    });
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-[#F0EDE8] flex items-center justify-center">

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useTenant } from '@/react-app/contexts/TenantContext';
 
 const Quiz = () => {
+  const { tenant } = useTenant();
   const [phase, setPhase] = useState('hero');
   const [qIdx, setQIdx] = useState(0);
   const [ans, setAns] = useState<Record<string, string>>({});
@@ -89,29 +91,12 @@ const Quiz = () => {
     updateTracking();
   }, [phase, qIdx]);
 
-  const proofs = [
-    { 
-      name: 'Ana Castela', 
-      field: 'Ícone da Música Sertaneja', 
-      text: 'É cliente Unlocked',
-      image: 'https://019c350b-7614-7690-9325-9a7fb6cd4609.mochausercontent.com/PROVA-2.png',
-      alt: 'Ana Castela, ícone da música sertaneja e cliente Unlocked Travel'
-    },
-    { 
-      name: 'Caio Souza', 
-      field: 'Finalista Olímpico', 
-      text: 'É cliente Unlocked',
-      image: 'https://019c350b-7614-7690-9325-9a7fb6cd4609.mochausercontent.com/PROVA-1.png',
-      alt: 'Caio Souza, finalista olímpico e cliente Unlocked Travel'
-    },
-    { 
-      name: 'Gui Deodato', 
-      field: 'Campeão da Americup 2025 e Referência do Basquete Brasileiro', 
-      text: 'É cliente Unlocked',
-      image: 'https://019c350b-7614-7690-9325-9a7fb6cd4609.mochausercontent.com/PROVA-3.png',
-      alt: 'Gui Deodato, campeão da Americup 2025 e cliente Unlocked Travel'
-    },
+  const defaultProofImages = [
+    'https://019c350b-7614-7690-9325-9a7fb6cd4609.mochausercontent.com/PROVA-2.png',
+    'https://019c350b-7614-7690-9325-9a7fb6cd4609.mochausercontent.com/PROVA-1.png',
+    'https://019c350b-7614-7690-9325-9a7fb6cd4609.mochausercontent.com/PROVA-3.png',
   ];
+  const proofImages = (tenant?.assets?.proofImages?.length ? tenant.assets.proofImages : defaultProofImages);
 
   useEffect(() => {
     if (phase !== 'socialProof') return;
@@ -121,7 +106,7 @@ const Quiz = () => {
     let idx = 0;
     const interval = setInterval(() => {
       idx++;
-      if (idx >= proofs.length) {
+      if (idx >= proofImages.length) {
         clearInterval(interval);
         console.log('[Quiz] Finalizando socialProof → analyzing');
         setTimeout(() => { setPhase('analyzing'); }, 800);
@@ -506,7 +491,26 @@ const Quiz = () => {
 
   const pct=Math.round((qIdx/QS.length)*100);
   const cq=QS[qIdx];
-  const navy='#1B2541',gold='#B8860B',cream='#FAFAF8';
+  const navy='var(--color-navy, #1B2541)';
+  const gold='var(--color-gold, #B8860B)';
+  const cream='var(--color-cream, #FAFAF8)';
+
+  // Resolved hex values for rgba() where CSS vars can't be used directly
+  const t = tenant?.theme;
+  const navyHex = t?.navy ?? '#1B2541';
+  const goldHex = t?.gold ?? '#B8860B';
+  const creamHex = t?.cream ?? '#FAFAF8';
+  const flagBlueHex = t?.flagBlue ?? '#1B3A6B';
+  const flagRedHex = t?.flagRed ?? '#C41E3A';
+
+  // Dynamic tenant data
+  const logoUrl = tenant?.assets?.logoUrl ?? 'https://019c350b-7614-7690-9325-9a7fb6cd4609.mochausercontent.com/4.png';
+  const footerLogoUrl = tenant?.assets?.logoLight ?? 'https://019c3d04-0273-74b5-a5e8-d649f785d1fc.mochausercontent.com/2.png';
+  const waPhone = tenant?.contact?.whatsapp ?? '554197177910';
+  const contactEmail = tenant?.contact?.email ?? 'contato@unlockedtravel.com.br';
+  const contactInstagram = tenant?.contact?.instagram ?? '@ukconsultoriamigratoria';
+  const contactWebsite = tenant?.contact?.website ?? 'unlockedtravel.com.br';
+  const tenantName = tenant?.name ?? 'Unlocked';
 
   const analyzeTexts = [
     'Analisamos as melhores opções para o seu perfil',
@@ -515,7 +519,7 @@ const Quiz = () => {
   ];
 
   return (
-    <div style={{fontFamily:"'Crimson Pro',Georgia,serif",backgroundColor:cream,color:navy,minHeight:'100vh',overflow:'hidden'}}>
+    <div style={{fontFamily:"'Crimson Pro',Georgia,serif",backgroundColor:creamHex,color:navyHex,minHeight:'100vh',overflow:'hidden'}}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
         *{margin:0;padding:0;box-sizing:border-box}
@@ -535,12 +539,12 @@ const Quiz = () => {
         .quiz-input{position:relative}
         .opt:hover{background:rgba(184,134,11,.08);border-color:rgba(184,134,11,.35);transform:translateX(6px)}
         .opt:active{transform:translateX(6px) scale(.98)}
-        .cta{font-family:'Cormorant Garamond',serif;font-size:1.05rem;letter-spacing:.15em;text-transform:uppercase;padding:1.15rem 3rem;background:${navy};color:${cream};border:none;cursor:pointer;transition:all .3s ease;border-radius:2px;display:inline-flex;align-items:center;gap:.6rem}
-        .cta:hover{background:${gold};letter-spacing:.2em}
-        .inp{width:100%;padding:1.05rem 1.2rem;background:white;border:1px solid rgba(27,37,65,.1);color:${navy};font-family:'Crimson Pro',serif;font-size:1.05rem;margin-bottom:.6rem;transition:all .25s ease;border-radius:2px}
-        .inp:focus{outline:none;border-color:${gold};box-shadow:0 0 0 3px rgba(184,134,11,.1)}
+        .cta{font-family:'Cormorant Garamond',serif;font-size:1.05rem;letter-spacing:.15em;text-transform:uppercase;padding:1.15rem 3rem;background:var(--color-navy,#1B2541);color:var(--color-cream,#FAFAF8);border:none;cursor:pointer;transition:all .3s ease;border-radius:2px;display:inline-flex;align-items:center;gap:.6rem}
+        .cta:hover{background:var(--color-gold,#B8860B);letter-spacing:.2em}
+        .inp{width:100%;padding:1.05rem 1.2rem;background:white;border:1px solid rgba(27,37,65,.1);color:var(--color-navy,#1B2541);font-family:'Crimson Pro',serif;font-size:1.05rem;margin-bottom:.6rem;transition:all .25s ease;border-radius:2px}
+        .inp:focus{outline:none;border-color:var(--color-gold,#B8860B);box-shadow:0 0 0 3px rgba(184,134,11,.1)}
         .inp::placeholder{color:#B0AEB5}
-        .flag-bar{height:5px;background:linear-gradient(90deg,#1B3A6B 40%,${gold} 40%,${gold} 60%,#C41E3A 60%)}
+        .flag-bar{height:5px;background:linear-gradient(90deg,var(--color-flag-blue,#1B3A6B) 40%,var(--color-gold,#B8860B) 40%,var(--color-gold,#B8860B) 60%,var(--color-flag-red,#C41E3A) 60%)}
         .texture{position:absolute;top:0;left:0;right:0;bottom:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");opacity:.03;pointer-events:none}
         .waf{position:fixed;bottom:2rem;right:2rem;width:60px;height:60px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(37,211,102,.35);z-index:100;text-decoration:none;transition:all .25s;color:white}
         .waf:hover{transform:translateY(-3px);box-shadow:0 6px 25px rgba(37,211,102,.45)}
@@ -568,7 +572,7 @@ const Quiz = () => {
 
       <div className="flag-bar"/>
       {phase === 'done' && (
-        <a href="https://wa.me/554197177910?text=Olá! Gostaria de saber mais sobre imigrar para os EUA." target="_blank" rel="noopener noreferrer" className="waf">
+        <a href={`https://wa.me/${waPhone}?text=Olá! Gostaria de saber mais sobre imigrar para os EUA.`} target="_blank" rel="noopener noreferrer" className="waf">
           <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
             <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
           </svg>
@@ -578,10 +582,10 @@ const Quiz = () => {
       <section style={{minHeight:'auto',paddingTop:'12rem',paddingBottom:'10rem',display:'flex',flexDirection:'column',justifyContent:'center',alignItems:'center',position:'relative',overflow:'hidden',padding:'1.5rem'}}>
         <div className="texture"/>
 
-        <div style={{position:'absolute',top:0,left:0,right:0,padding:'1.3rem 5%',display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:10,borderBottom:'1px solid rgba(0,0,0,.06)',flexWrap:'wrap',gap:'.8rem',backgroundColor:cream}}>
-          <img 
-            src="https://019c350b-7614-7690-9325-9a7fb6cd4609.mochausercontent.com/4.png" 
-            alt="Unlocked Consultoria Migratória" 
+        <div style={{position:'absolute',top:0,left:0,right:0,padding:'1.3rem 5%',display:'flex',justifyContent:'space-between',alignItems:'center',zIndex:10,borderBottom:'1px solid rgba(0,0,0,.06)',flexWrap:'wrap',gap:'.8rem',backgroundColor:creamHex}}>
+          <img
+            src={logoUrl}
+            alt={tenantName}
             style={{height:'clamp(35px,8vw,50px)',width:'auto',objectFit:'contain'}}
           />
           {(phase==='quiz'||phase==='ready'||phase==='done') && (
@@ -710,14 +714,14 @@ const Quiz = () => {
               borderRadius:3,overflow:'hidden',maxWidth:280,margin:'0 auto',
               animation: proofVisible ? 'proofIn .5s ease-out' : 'proofOut .3s ease-out forwards',
             }}>
-              <img 
-                src={proofs[proofIdx].image} 
-                alt={proofs[proofIdx].alt}
+              <img
+                src={proofImages[proofIdx]}
+                alt={`Cliente ${tenantName} ${proofIdx + 1}`}
                 style={{width:'100%',height:'auto',display:'block',borderRadius:3}}
               />
             </div>
             <div style={{display:'flex',justifyContent:'center',gap:'.35rem',marginTop:'.8rem'}}>
-              {proofs.map((_,i) => <span key={i} style={{width:5,height:5,borderRadius:'50%',background:i===proofIdx?gold:'rgba(27,37,65,.1)',transition:'all .3s'}}/>)}
+              {proofImages.map((_,i) => <span key={i} style={{width:5,height:5,borderRadius:'50%',background:i===proofIdx?gold:'rgba(27,37,65,.1)',transition:'all .3s'}}/>)}
             </div>
           </div>
         )}
@@ -814,15 +818,15 @@ const Quiz = () => {
             </div>
             <p style={{fontFamily:"'Crimson Pro',serif",fontSize:'clamp(.8rem,2vw,.9rem)',color:'#B0AEB5',lineHeight:1.7,marginBottom:'2rem',fontStyle:'italic'}}>Confira sua caixa de entrada. Se preferir, fale agora com um especialista.</p>
             <div className="mobcol" style={{display:'flex',gap:'.8rem',justifyContent:'center',flexWrap:'wrap'}}>
-              <a href={`https://wa.me/554197177910?text=Olá! Fiz o teste de elegibilidade. Meu nome é ${encodeURIComponent(form.name)}. Gostaria de uma consulta.`} target="_blank" rel="noopener noreferrer" style={{textDecoration:'none'}}>
-                <button 
+              <a href={`https://wa.me/${waPhone}?text=Olá! Fiz o teste de elegibilidade. Meu nome é ${encodeURIComponent(form.name)}. Gostaria de uma consulta.`} target="_blank" rel="noopener noreferrer" style={{textDecoration:'none'}}>
+                <button
                   style={{
                     fontFamily:"'Cormorant Garamond',serif",fontSize:'1.05rem',letterSpacing:'.12em',textTransform:'uppercase',
-                    padding:'1.1rem 2.8rem',background:navy,color:cream,border:`1px solid ${gold}`,
+                    padding:'1.1rem 2.8rem',background:navyHex,color:creamHex,border:`1px solid ${goldHex}`,
                     cursor:'pointer',transition:'all .3s ease',borderRadius:2,display:'inline-flex',alignItems:'center',gap:'.6rem'
                   }}
-                  onMouseOver={e=>{e.currentTarget.style.background=gold;e.currentTarget.style.color=navy}}
-                  onMouseOut={e=>{e.currentTarget.style.background=navy;e.currentTarget.style.color=cream}}
+                  onMouseOver={e=>{e.currentTarget.style.background=goldHex;e.currentTarget.style.color=navyHex}}
+                  onMouseOut={e=>{e.currentTarget.style.background=navyHex;e.currentTarget.style.color=creamHex}}
                   id="btn-quiz-resultado-whatsapp"
                   data-section="resultado"
                   data-action="whatsapp"
@@ -844,9 +848,9 @@ const Quiz = () => {
               </button>
             </div>
             <div style={{marginTop:30,paddingTop:20,borderTop:'1px solid rgba(27,37,65,0.1)',display:'flex',gap:15,justifyContent:'center',flexWrap:'wrap',fontSize:'clamp(11px,2vw,13px)'}}>
-              <a href="https://unlockedtravel.com.br/" target="_blank" rel="noopener noreferrer" style={{fontFamily:"'Crimson Pro',serif",fontSize:'inherit',color:'#8A8890',textDecoration:'none'}}>unlockedtravel.com.br</a>
-              <a href="https://www.instagram.com/ukconsultoriamigratoria" target="_blank" rel="noopener noreferrer" style={{fontFamily:"'Crimson Pro',serif",fontSize:'inherit',color:'#8A8890',textDecoration:'none'}}>@ukconsultoriamigratoria</a>
-              <span style={{fontFamily:"'Crimson Pro',serif",fontSize:'inherit',color:'#8A8890'}}>contato@unlockedtravel.com.br</span>
+              {contactWebsite && <a href={`https://${contactWebsite}`} target="_blank" rel="noopener noreferrer" style={{fontFamily:"'Crimson Pro',serif",fontSize:'inherit',color:'#8A8890',textDecoration:'none'}}>{contactWebsite}</a>}
+              {contactInstagram && <a href={`https://www.instagram.com/${contactInstagram.replace('@','')}`} target="_blank" rel="noopener noreferrer" style={{fontFamily:"'Crimson Pro',serif",fontSize:'inherit',color:'#8A8890',textDecoration:'none'}}>{contactInstagram}</a>}
+              {contactEmail && <span style={{fontFamily:"'Crimson Pro',serif",fontSize:'inherit',color:'#8A8890'}}>{contactEmail}</span>}
             </div>
           </div>
         )}
@@ -862,14 +866,14 @@ const Quiz = () => {
             {/* Coluna 1: Empresa */}
             <div style={{display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center'}}>
               <div style={{marginBottom:'1rem'}}>
-                <img 
-                  src="https://019c3d04-0273-74b5-a5e8-d649f785d1fc.mochausercontent.com/2.png" 
-                  alt="Unlocked Logo" 
+                <img
+                  src={footerLogoUrl}
+                  alt={tenantName}
                   style={{height:80,width:'auto'}}
                 />
               </div>
               <p style={{fontSize:'.875rem',color:'rgba(255,255,255,0.6)',lineHeight:1.6}}>
-                Consultoria especializada em processos migratórios e estratégias de acúmulo de milhas aéreas.
+                {tenant?.copy?.footerTagline ?? 'Consultoria especializada em processos migratórios e estratégias de acúmulo de milhas aéreas.'}
               </p>
             </div>
 
@@ -877,26 +881,30 @@ const Quiz = () => {
             <div style={{display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center'}}>
               <h5 style={{color:'white',fontWeight:'bold',marginBottom:'1rem',fontSize:'.875rem',letterSpacing:'.1em',textTransform:'uppercase'}}>Contato</h5>
               <div style={{display:'flex',flexDirection:'column',gap:'.625rem'}}>
-                <a 
-                  href="mailto:contato@unlockedtravel.com.br"
-                  style={{display:'flex',alignItems:'center',gap:'.5rem',fontSize:'.875rem',color:'rgba(255,255,255,0.7)',textDecoration:'none',transition:'color .25s'}}
-                  onMouseOver={e=>e.currentTarget.style.color='#D4A847'}
-                  onMouseOut={e=>e.currentTarget.style.color='rgba(255,255,255,0.7)'}
-                >
-                  <span>✉️</span>
-                  <span>contato@unlockedtravel.com.br</span>
-                </a>
-                <a 
-                  href="https://instagram.com/ukconsultoriamigratoria" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  style={{display:'flex',alignItems:'center',gap:'.5rem',fontSize:'.875rem',color:'rgba(255,255,255,0.7)',textDecoration:'none',transition:'color .25s'}}
-                  onMouseOver={e=>e.currentTarget.style.color='#D4A847'}
-                  onMouseOut={e=>e.currentTarget.style.color='rgba(255,255,255,0.7)'}
-                >
-                  <span>📷</span>
-                  <span>@ukconsultoriamigratoria</span>
-                </a>
+                {contactEmail && (
+                  <a
+                    href={`mailto:${contactEmail}`}
+                    style={{display:'flex',alignItems:'center',gap:'.5rem',fontSize:'.875rem',color:'rgba(255,255,255,0.7)',textDecoration:'none',transition:'color .25s'}}
+                    onMouseOver={e=>e.currentTarget.style.color='#D4A847'}
+                    onMouseOut={e=>e.currentTarget.style.color='rgba(255,255,255,0.7)'}
+                  >
+                    <span>✉️</span>
+                    <span>{contactEmail}</span>
+                  </a>
+                )}
+                {contactInstagram && (
+                  <a
+                    href={`https://instagram.com/${contactInstagram.replace('@','')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{display:'flex',alignItems:'center',gap:'.5rem',fontSize:'.875rem',color:'rgba(255,255,255,0.7)',textDecoration:'none',transition:'color .25s'}}
+                    onMouseOver={e=>e.currentTarget.style.color='#D4A847'}
+                    onMouseOut={e=>e.currentTarget.style.color='rgba(255,255,255,0.7)'}
+                  >
+                    <span>📷</span>
+                    <span>{contactInstagram}</span>
+                  </a>
+                )}
               </div>
             </div>
 
@@ -915,8 +923,8 @@ const Quiz = () => {
           {/* Barra inferior */}
           <div style={{paddingTop:'1.5rem',borderTop:'1px solid rgba(255,255,255,0.1)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'.75rem',fontSize:'.75rem',color:'rgba(255,255,255,0.4)',textAlign:'center'}}>
             <div>
-              <div>© 2026 Unlocked Consultoria Migratória • Todos os direitos reservados</div>
-              <div style={{marginTop:'.25rem'}}>CNPJ: 40.124.324/0001-56 • Av. Brasil, 695 - 1° Andar - Centro, Mandirituba - PR, 83800-036</div>
+              <div>{tenant?.copy?.footerCopyright ?? `© 2026 ${tenantName} • Todos os direitos reservados`}</div>
+              {tenant?.copy?.footerAddress && <div style={{marginTop:'.25rem'}}>{tenant.copy.footerAddress}</div>}
             </div>
           </div>
         </div>

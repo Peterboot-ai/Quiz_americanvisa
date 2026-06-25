@@ -1,0 +1,14 @@
+-- =============================================================================
+-- Seed super_admin
+--
+-- Execute APÓS o primeiro login via Google em /super-admin.
+-- 1. Obtenha o UUID do usuário:
+--      select id, email from auth.users;
+-- 2. Substitua '<UUID_DO_USUARIO>' e descomente o insert abaixo.
+--
+-- Nota: tenant_id = 1 (Unlocked) é usado como sentinela. O role 'super_admin'
+-- garante acesso a todos os tenants independentemente do tenant_id aqui.
+-- =============================================================================
+
+-- insert into public.tenant_users (user_id, tenant_id, role)
+-- values ('<UUID_DO_USUARIO>', 1, 'super_admin');
