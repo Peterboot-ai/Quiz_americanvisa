@@ -41,7 +41,7 @@ interface Lead {
 
 const Admin = () => {
   const { tenant } = useTenant();
-  const tenantSlug = new URLSearchParams(window.location.search).get('tenant') ?? undefined;
+  const tenantSlug = new URLSearchParams(window.location.search).get('tenant') ?? tenant?.slug ?? undefined;
   const [session, setSession] = useState<{ access_token: string; user: { email: string } } | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
