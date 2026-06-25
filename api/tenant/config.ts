@@ -12,7 +12,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const config = toPublicConfig(tenant);
-  // Cache público por 60s, stale-while-revalidate por 5min
-  res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+  res.setHeader('Cache-Control', 'no-store');
   return res.status(200).json(config);
 }

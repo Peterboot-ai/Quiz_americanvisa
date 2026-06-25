@@ -24,7 +24,17 @@ export interface TenantRow {
 
 // Simple in-memory cache: slug → tenant, expires after 60s
 const cache = new Map<string, { tenant: TenantRow; expiresAt: number }>();
-const CACHE_TTL_MS = 60_000;
+const CACHE_TTL_MS = 10_000;
+
+export function invalidateTenantCache(slug: string) {
+  cache.delete(`slug:${slug}`);
+  for (const key of cache.keys()) {
+    if (key.startsWith('domain:')) {
+      const entry = cache.get(key);
+      if (entry?.tenant.slug === slug) cache.delete(key);
+    }
+  }
+}
 
 function getCached(key: string): TenantRow | null {
   const entry = cache.get(key);

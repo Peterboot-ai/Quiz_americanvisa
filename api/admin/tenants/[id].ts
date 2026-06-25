@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { z } from 'zod';
 import { supabase } from '../../_lib/supabase.js';
 import { requireAuth } from '../../_lib/auth.js';
+import { invalidateTenantCache } from '../../_lib/tenant.js';
 
 const PatchTenantSchema = z.object({
   name:                z.string().min(1).optional(),
@@ -70,6 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .single();
 
     if (error) return res.status(500).json({ error: error.message });
+    if (data?.slug) invalidateTenantCache(data.slug);
     return res.status(200).json({ success: true, tenant: data });
   }
 
