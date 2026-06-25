@@ -3,6 +3,7 @@ import { useTenant } from '@/react-app/contexts/TenantContext';
 
 const Quiz = () => {
   const { tenant, slug } = useTenant();
+  const basePath = slug ? `/p/${slug}` : '/quiz';
   const [phase, setPhase] = useState('hero');
   const [qIdx, setQIdx] = useState(0);
   const [ans, setAns] = useState<Record<string, string>>({});
@@ -18,36 +19,36 @@ const Quiz = () => {
   useEffect(() => {
     const updateTracking = () => {
       // Update URL
-      let url = '/quiz';
+      let url = basePath;
       let stepName = '';
       let progressPercent = 0;
-      
+
       if (phase === 'hero') {
-        url = '/quiz';
+        url = basePath;
         stepName = 'inicio';
         progressPercent = 0;
       } else if (phase === 'quiz') {
-        url = `/quiz#step-${qIdx + 1}`;
+        url = `${basePath}#step-${qIdx + 1}`;
         stepName = `pergunta-${qIdx + 1}`;
         progressPercent = Math.round((qIdx / QS.length) * 100);
       } else if (phase === 'capture') {
-        url = '/quiz#step-captura';
+        url = `${basePath}#step-captura`;
         stepName = 'captura-dados';
         progressPercent = 90;
       } else if (phase === 'socialProof') {
-        url = '/quiz#step-prova-social';
+        url = `${basePath}#step-prova-social`;
         stepName = 'prova-social';
         progressPercent = 85;
       } else if (phase === 'analyzing') {
-        url = '/quiz#step-analisando';
+        url = `${basePath}#step-analisando`;
         stepName = 'analisando';
         progressPercent = 95;
       } else if (phase === 'ready') {
-        url = '/quiz#step-resultado';
+        url = `${basePath}#step-resultado`;
         stepName = 'resultado';
         progressPercent = 100;
       } else if (phase === 'done') {
-        url = '/quiz#step-concluido';
+        url = `${basePath}#step-concluido`;
         stepName = 'concluido';
         progressPercent = 100;
       }
