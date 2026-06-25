@@ -24,7 +24,7 @@ export interface TenantRow {
 
 // Simple in-memory cache: slug → tenant, expires after 60s
 const cache = new Map<string, { tenant: TenantRow; expiresAt: number }>();
-const CACHE_TTL_MS = 10_000;
+const CACHE_TTL_MS = 0;
 
 export function invalidateTenantCache(slug: string) {
   cache.delete(`slug:${slug}`);
