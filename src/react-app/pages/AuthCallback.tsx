@@ -11,18 +11,30 @@ const AuthCallback = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate('/admin');
-      } else {
-        // Exchange the code from the URL for a session
-        supabase.auth.exchangeCodeForSession(window.location.href).then(() => {
-          navigate('/admin');
-        }).catch(() => {
-          navigate('/admin');
-        });
+    const redirectTo = sessionStorage.getItem('auth_redirect') || '/admin';
+
+    const finish = () => {
+      sessionStorage.removeItem('auth_redirect');
+      navigate(redirectTo);
+    };
+
+    // Listen for auth state change (handles both implicit and PKCE flows)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        subscription.unsubscribe();
+        finish();
       }
     });
+
+    // Fallback: if session already exists (e.g. page refresh)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        subscription.unsubscribe();
+        finish();
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, [navigate]);
 
   return (
