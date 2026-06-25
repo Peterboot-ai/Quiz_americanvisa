@@ -409,7 +409,7 @@ const Quiz = () => {
       const analyzedResult = analyze(n);
       console.log('[Quiz] Resultado calculado:', analyzedResult);
       setResult(analyzedResult);
-      setPhase('socialProof');
+      setPhase(tenant?.assets?.proofImages?.length ? 'socialProof' : 'analyzing');
     },300);
   };
   const back=()=>{if(qIdx>0){setDir('back');const n={...ans};delete n[QS[qIdx].id];setAns(n);setQIdx(qIdx-1)}};
