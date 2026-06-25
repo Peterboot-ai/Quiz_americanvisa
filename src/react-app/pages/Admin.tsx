@@ -41,6 +41,7 @@ interface Lead {
 
 const Admin = () => {
   const { tenant } = useTenant();
+  const tenantSlug = new URLSearchParams(window.location.search).get('tenant') ?? undefined;
   const [session, setSession] = useState<{ access_token: string; user: { email: string } } | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -91,7 +92,8 @@ const Admin = () => {
     const t = token ?? session?.access_token ?? '';
     if (!t) return;
     try {
-      const response = await fetch('/api/admin/leads', {
+      const leadsUrl = tenantSlug ? `/api/admin/leads?tenant=${tenantSlug}` : '/api/admin/leads';
+      const response = await fetch(leadsUrl, {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
       });
       const data = await response.json();
@@ -108,7 +110,8 @@ const Admin = () => {
       const token = session.access_token;
       fetchLeads(token);
       // Check onboarding status
-      fetch('/api/admin/onboarding', {
+      const onboardingUrl = tenantSlug ? `/api/admin/onboarding?tenant=${tenantSlug}` : '/api/admin/onboarding';
+      fetch(onboardingUrl, {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then(r => r.json())

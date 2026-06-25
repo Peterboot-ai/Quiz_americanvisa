@@ -5,6 +5,11 @@ import Admin from "@/react-app/pages/Admin";
 import SuperAdmin from "@/react-app/pages/SuperAdmin";
 import AuthCallback from "@/react-app/pages/AuthCallback";
 
+function AdminWithTenant() {
+  const slug = new URLSearchParams(window.location.search).get('tenant') ?? undefined;
+  return <TenantProvider slug={slug}><Admin /></TenantProvider>;
+}
+
 function QuizWithTenant({ slug }: { slug?: string }) {
   return (
     <TenantProvider slug={slug}>
@@ -25,7 +30,7 @@ export default function App() {
         <Route path="/" element={<QuizWithTenant />} />
         <Route path="/quiz" element={<Navigate to="/" replace />} />
         <Route path="/p/:slug" element={<PartnerQuiz />} />
-        <Route path="/admin" element={<TenantProvider><Admin /></TenantProvider>} />
+        <Route path="/admin" element={<AdminWithTenant />} />
         <Route path="/super-admin" element={<TenantProvider><SuperAdmin /></TenantProvider>} />
         <Route path="/auth/callback" element={<AuthCallback />} />
       </Routes>
