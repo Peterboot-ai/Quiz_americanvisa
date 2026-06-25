@@ -4,16 +4,18 @@ import type { TenantPublicConfig } from '../../../api/_lib/tenant-schema';
 interface TenantContextValue {
   tenant: TenantPublicConfig | null;
   loading: boolean;
+  slug: string | undefined;
 }
 
-const TenantContext = createContext<TenantContextValue>({ tenant: null, loading: true });
+const TenantContext = createContext<TenantContextValue>({ tenant: null, loading: true, slug: undefined });
 
-export function TenantProvider({ children }: { children: ReactNode }) {
+export function TenantProvider({ children, slug }: { children: ReactNode; slug?: string }) {
   const [tenant, setTenant] = useState<TenantPublicConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/tenant/config')
+    const url = slug ? `/api/tenant/config?tenant=${slug}` : '/api/tenant/config';
+    fetch(url)
       .then((res) => res.json())
       .then((data: TenantPublicConfig) => {
         setTenant(data);
@@ -23,10 +25,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         console.error('Failed to load tenant config:', err);
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [slug]);
 
   return (
-    <TenantContext.Provider value={{ tenant, loading }}>
+    <TenantContext.Provider value={{ tenant, loading, slug }}>
       {children}
     </TenantContext.Provider>
   );

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTenant } from '@/react-app/contexts/TenantContext';
 
 const Quiz = () => {
-  const { tenant } = useTenant();
+  const { tenant, slug } = useTenant();
   const [phase, setPhase] = useState('hero');
   const [qIdx, setQIdx] = useState(0);
   const [ans, setAns] = useState<Record<string, string>>({});
@@ -420,7 +420,8 @@ const Quiz = () => {
     console.log('[Quiz] Enviando formulário');
     
     try {
-      const response = await fetch('/api/leads', {
+      const leadsUrl = slug ? `/api/leads?tenant=${slug}` : '/api/leads';
+      const response = await fetch(leadsUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

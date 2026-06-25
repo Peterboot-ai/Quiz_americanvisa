@@ -1,22 +1,34 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from "react-router";
 import { TenantProvider } from "@/react-app/contexts/TenantContext";
 import Quiz from "@/react-app/pages/Quiz";
 import Admin from "@/react-app/pages/Admin";
 import SuperAdmin from "@/react-app/pages/SuperAdmin";
 import AuthCallback from "@/react-app/pages/AuthCallback";
 
+function QuizWithTenant({ slug }: { slug?: string }) {
+  return (
+    <TenantProvider slug={slug}>
+      <Quiz />
+    </TenantProvider>
+  );
+}
+
+function PartnerQuiz() {
+  const { slug } = useParams<{ slug: string }>();
+  return <QuizWithTenant slug={slug} />;
+}
+
 export default function App() {
   return (
-    <TenantProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Quiz />} />
-          <Route path="/quiz" element={<Navigate to="/" replace />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/super-admin" element={<SuperAdmin />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-        </Routes>
-      </Router>
-    </TenantProvider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<QuizWithTenant />} />
+        <Route path="/quiz" element={<Navigate to="/" replace />} />
+        <Route path="/p/:slug" element={<PartnerQuiz />} />
+        <Route path="/admin" element={<TenantProvider><Admin /></TenantProvider>} />
+        <Route path="/super-admin" element={<TenantProvider><SuperAdmin /></TenantProvider>} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+      </Routes>
+    </Router>
   );
 }
