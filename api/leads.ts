@@ -93,6 +93,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (insertError) throw insertError;
 
     // Send email with tenant branding — non-blocking
+    if (!tenant.brevo_api_key || !tenant.sender_email) {
+      return res.status(200).json({ success: true, leadId: inserted.id });
+    }
     try {
       const theme    = ThemeSchema.parse(tenant.theme);
       const assets   = AssetsSchema.parse(tenant.assets);

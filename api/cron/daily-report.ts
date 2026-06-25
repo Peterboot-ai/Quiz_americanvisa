@@ -58,11 +58,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Validate CRON_SECRET to prevent unauthorized triggers
   const cronSecret = process.env.CRON_SECRET;
-  if (cronSecret) {
-    const authHeader = req.headers['authorization'];
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+  if (!cronSecret) {
+    return res.status(500).json({ error: 'CRON_SECRET not configured' });
+  }
+  const authHeader = req.headers['authorization'];
+  if (authHeader !== `Bearer ${cronSecret}`) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   const yesterday = new Date();

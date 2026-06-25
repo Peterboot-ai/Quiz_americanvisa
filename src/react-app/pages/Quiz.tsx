@@ -440,15 +440,8 @@ const Quiz = () => {
       
       console.log('[Quiz] Lead enviado com sucesso');
       
-      // Facebook Pixel - Track lead with email and phone
+      // Facebook Pixel - Track Lead event (pixel initialized by tenant GTM)
       if (typeof window !== 'undefined' && (window as any).fbq) {
-        // Re-initialize pixel with user data (will be hashed automatically)
-        (window as any).fbq('init', '2407409072799832', {
-          em: form.email,
-          ph: form.phone.replace(/\D/g, ''),
-        });
-        
-        // Track Lead event
         (window as any).fbq('track', 'Lead', {
           content_name: 'Quiz American Visa',
           content_category: 'Lead Generation',
@@ -464,12 +457,12 @@ const Quiz = () => {
           quiz_lead_email: form.email,
           quiz_lead_name: form.name,
           quiz_lead_phone: form.phone,
-          quiz_result_primary: result?.primary?.type || null,
-          quiz_result_eb2niw: `${result?.eb2niw?.met}/${result?.eb2niw?.total}`,
-          quiz_result_eb1a: `${result?.eb1a?.met}/${result?.eb1a?.total}`,
-          quiz_result_l1a: `${result?.l1a?.met}/${result?.l1a?.total}`,
-          quiz_result_o1a: `${result?.o1a?.met}/${result?.o1a?.total}`,
-          quiz_is_potential_client: result?.isPotential || false,
+          quiz_result_primary: result?.primary || null,
+          quiz_result_eb2niw: `${result?.visas?.eb2niw?.met}/${result?.visas?.eb2niw?.total}`,
+          quiz_result_eb1a: `${result?.visas?.eb1a?.met}/${result?.visas?.eb1a?.total}`,
+          quiz_result_l1a: `${result?.visas?.l1a?.met}/${result?.visas?.l1a?.total}`,
+          quiz_result_o1a: `${result?.visas?.o1a?.met}/${result?.visas?.o1a?.total}`,
+          quiz_is_potential_client: result?.anyEligible || false,
         });
         
         // Also track as a conversion event
