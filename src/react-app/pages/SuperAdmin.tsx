@@ -454,26 +454,26 @@ const SuperAdmin = () => {
         {showNewForm && (
           <Card className="mb-6 max-w-lg">
             <CardContent className="p-6">
-              <h2 className="font-bold mb-4 text-gray-800">Novo Tenant</h2>
+              <h2 className="font-bold mb-4 text-gray-800">Novo Parceiro</h2>
               <div className="mb-3">
-                <label className="block text-xs font-medium text-gray-600 mb-1">Slug (único, sem espaços)</label>
-                <input value={newTenant.slug} onChange={e => setNewTenant(n => ({ ...n, slug: e.target.value }))} placeholder="ex: parceiro-x" className="w-full px-3 py-2 border rounded text-sm"/>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Slug — ID único na URL (ex: hub-vistos)</label>
+                <input value={newTenant.slug} onChange={e => setNewTenant(n => ({ ...n, slug: e.target.value }))} placeholder="hub-vistos" className="w-full px-3 py-2 border rounded text-sm"/>
               </div>
               <div className="mb-3">
-                <label className="block text-xs font-medium text-gray-600 mb-1">Nome</label>
-                <input value={newTenant.name} onChange={e => setNewTenant(n => ({ ...n, name: e.target.value }))} className="w-full px-3 py-2 border rounded text-sm"/>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Nome da empresa <span className="text-red-400">*</span></label>
+                <input value={newTenant.name} onChange={e => setNewTenant(n => ({ ...n, name: e.target.value }))} placeholder="Hub Vistos" className="w-full px-3 py-2 border rounded text-sm"/>
               </div>
               <div className="mb-3">
-                <label className="block text-xs font-medium text-gray-600 mb-1">Domínio de e-mail permitido</label>
-                <input value={newTenant.allowed_email_domain} onChange={e => setNewTenant(n => ({ ...n, allowed_email_domain: e.target.value }))} placeholder="@empresa.com.br" className="w-full px-3 py-2 border rounded text-sm"/>
+                <label className="block text-xs font-medium text-gray-600 mb-1">E-mail do parceiro (para login no admin)</label>
+                <input value={newTenant.allowed_email_domain} onChange={e => setNewTenant(n => ({ ...n, allowed_email_domain: e.target.value }))} placeholder="cris@hubvistos.com.br" className="w-full px-3 py-2 border rounded text-sm"/>
               </div>
               <div className="mb-3">
-                <label className="block text-xs font-medium text-gray-600 mb-1">E-mail remetente</label>
-                <input value={newTenant.sender_email} onChange={e => setNewTenant(n => ({ ...n, sender_email: e.target.value }))} className="w-full px-3 py-2 border rounded text-sm"/>
+                <label className="block text-xs font-medium text-gray-600 mb-1">E-mail que aparece no envio para o cliente</label>
+                <input value={newTenant.sender_email} onChange={e => setNewTenant(n => ({ ...n, sender_email: e.target.value }))} placeholder="contato@hubvistos.com.br" className="w-full px-3 py-2 border rounded text-sm"/>
               </div>
               <div className="mb-4">
-                <label className="block text-xs font-medium text-gray-600 mb-1">Nome remetente</label>
-                <input value={newTenant.sender_name} onChange={e => setNewTenant(n => ({ ...n, sender_name: e.target.value }))} className="w-full px-3 py-2 border rounded text-sm"/>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Nome que aparece no envio para o cliente</label>
+                <input value={newTenant.sender_name} onChange={e => setNewTenant(n => ({ ...n, sender_name: e.target.value }))} placeholder="Hub Vistos" className="w-full px-3 py-2 border rounded text-sm"/>
               </div>
               <div className="flex gap-2">
                 <Button onClick={createTenant} size="sm">Criar</Button>
