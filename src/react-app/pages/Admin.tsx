@@ -87,15 +87,14 @@ const Admin = () => {
     'Authorization': `Bearer ${session?.access_token ?? ''}`,
   });
 
-  const fetchLeads = async () => {
-    if (!session) return;
+  const fetchLeads = async (token?: string) => {
+    const t = token ?? session?.access_token ?? '';
+    if (!t) return;
     try {
-      const response = await fetch('/api/admin/leads', { headers: authHeaders() });
+      const response = await fetch('/api/admin/leads', {
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
+      });
       const data = await response.json();
-      if (response.status === 401 || response.status === 403) {
-        await supabase.auth.signOut();
-        return;
-      }
       if (data.success) setLeads(data.leads);
     } catch (error) {
       console.error('Error fetching leads:', error);
@@ -105,17 +104,17 @@ const Admin = () => {
   };
 
   useEffect(() => {
-    if (session) {
-      fetchLeads();
+    if (session?.access_token) {
+      const token = session.access_token;
+      fetchLeads(token);
       // Check onboarding status
       fetch('/api/admin/onboarding', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { Authorization: `Bearer ${token}` },
       })
         .then(r => r.json())
         .then(data => {
           if (data.success) {
             setOnboarding(data);
-            // Show checklist if setup is incomplete
             if (!data.isComplete) setShowOnboarding(true);
           }
         })
