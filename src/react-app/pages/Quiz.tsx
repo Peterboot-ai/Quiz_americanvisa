@@ -606,12 +606,12 @@ const Quiz = () => {
             <div style={{textAlign:'left'}}>
               <div style={{display:'flex',alignItems:'center',gap:'.6rem',marginBottom:'1.8rem',justifyContent:'flex-start'}}>
                 <span style={{fontSize:'1.5rem'}}>🇺🇸</span>
-                <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'.75rem',letterSpacing:'.25em',textTransform:'uppercase',color:gold}}>Estados Unidos</p>
+                <p style={{fontFamily:"'Cormorant Garamond',serif",fontSize:'.75rem',letterSpacing:'.25em',textTransform:'uppercase',color:navy}}>Estados Unidos</p>
               </div>
               <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:'clamp(2rem,5vw,3.6rem)',fontWeight:400,lineHeight:1.1,color:navy,letterSpacing:'-.02em',marginBottom:'1.3rem'}}>
-                Seu caminho legal<br/>para morar nos <em style={{fontStyle:'italic',color:gold}}>Estados Unidos</em>
+                Seu caminho legal<br/>para morar nos <em style={{fontStyle:'italic',color:navy}}>Estados Unidos</em>
               </h1>
-              <div style={{width:80,height:1,background:`linear-gradient(90deg,${navy},${gold})`,marginBottom:'1.3rem',margin:'0 auto 1.3rem'}}/>
+              <div style={{width:80,height:1,background:navy,marginBottom:'1.3rem',margin:'0 auto 1.3rem'}}/>
               <p style={{fontFamily:"'Crimson Pro',serif",fontSize:'clamp(.95rem,2.5vw,1.1rem)',lineHeight:1.8,color:'#5C5A65',fontWeight:300,maxWidth:420,marginBottom:'2.2rem',margin:'0 auto 2.2rem'}}>
                 Responda <strong style={{fontWeight:600,color:navy}}>algumas perguntas simples</strong> e receba no seu e-mail uma análise personalizada do melhor caminho para você morar legalmente nos Estados Unidos.
               </p>
