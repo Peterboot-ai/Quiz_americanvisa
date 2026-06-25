@@ -41,6 +41,7 @@ export function generateEmailHTML(data: EmailData): string {
   const a = tenant.assets;
   const c = tenant.contact;
   const copy = tenant.copy;
+  const emailGold = t.goldEmail || t.gold;
 
   const firstName = data.name.split(' ')[0];
   const primaryVisaName = visaNames[data.primary_visa] || data.primary_visa;
@@ -84,7 +85,7 @@ export function generateEmailHTML(data: EmailData): string {
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" style="max-width:600px; background-color:${t.creamAlt}; border-radius:2px; overflow:hidden; box-shadow:0 2px 20px rgba(27,37,65,0.08);" class="email-container">
 
           <!-- FLAG BAR -->
-          <tr><td style="height:5px; background:linear-gradient(90deg,${t.flagBlue} 40%,${t.gold} 40%,${t.gold} 60%,${t.flagRed} 60%); font-size:0; line-height:0;">&nbsp;</td></tr>
+          <tr><td style="height:5px; background:linear-gradient(90deg,${t.flagBlue} 40%,${emailGold} 40%,${emailGold} 60%,${t.flagRed} 60%); font-size:0; line-height:0;">&nbsp;</td></tr>
 
           <!-- HEADER -->
           <tr>
@@ -92,14 +93,14 @@ export function generateEmailHTML(data: EmailData): string {
               ${a.logoUrl
                 ? `<img src="${a.logoUrl}" alt="${tenant.name}" style="height:40px; margin-bottom:8px; display:block; margin-left:auto; margin-right:auto;">`
                 : `<p style="margin:0; font-family:Georgia,serif; font-size:22px; font-weight:bold; letter-spacing:3px; color:${t.navy};">${tenant.name.toUpperCase()}</p>
-                   <p style="margin:4px 0 0; font-family:Georgia,serif; font-size:10px; letter-spacing:5px; color:${t.gold}; text-transform:uppercase;">Consultoria Migratória</p>`
+                   <p style="margin:4px 0 0; font-family:Georgia,serif; font-size:10px; letter-spacing:5px; color:${emailGold}; text-transform:uppercase;">Consultoria Migratória</p>`
               }
             </td>
           </tr>
 
           <!-- GREETING -->
           <tr><td style="padding:40px 40px 10px;" class="mobile-pad">
-            <p style="margin:0; font-family:Georgia,serif; font-size:14px; color:${t.gold}; letter-spacing:3px; text-transform:uppercase;">Resultado da sua análise</p>
+            <p style="margin:0; font-family:Georgia,serif; font-size:14px; color:${emailGold}; letter-spacing:3px; text-transform:uppercase;">Resultado da sua análise</p>
           </td></tr>
           <tr><td style="padding:5px 40px 10px;" class="mobile-pad">
             <h1 style="margin:0; font-family:Georgia,serif; font-size:28px; font-weight:normal; color:${t.navy}; line-height:1.25;">Olá, ${firstName}.</h1>
@@ -111,18 +112,18 @@ export function generateEmailHTML(data: EmailData): string {
           </td></tr>
 
           <!-- DIVIDER -->
-          <tr><td style="padding:0 40px;" class="mobile-pad"><div style="height:1px; background:linear-gradient(90deg,${t.flagBlue},${t.gold},${t.flagRed});"></div></td></tr>
+          <tr><td style="padding:0 40px;" class="mobile-pad"><div style="height:1px; background:linear-gradient(90deg,${t.flagBlue},${emailGold},${t.flagRed});"></div></td></tr>
 
           <!-- LAUDO -->
           <tr><td style="padding:30px 40px 10px;" class="mobile-pad">
-            <p style="margin:0 0 5px; font-family:Georgia,serif; font-size:12px; color:${t.gold}; letter-spacing:3px; text-transform:uppercase;">Seu Laudo de Elegibilidade</p>
+            <p style="margin:0 0 5px; font-family:Georgia,serif; font-size:12px; color:${emailGold}; letter-spacing:3px; text-transform:uppercase;">Seu Laudo de Elegibilidade</p>
             <h2 style="margin:0; font-family:Georgia,serif; font-size:22px; font-weight:normal; color:${t.navy};">Critérios atendidos por categoria</h2>
           </td></tr>
 
           <!-- EB-2 NIW BAR -->
           <tr><td style="padding:20px 40px 0;" class="mobile-pad">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-              <tr><td style="font-family:Georgia,serif; font-size:15px; font-weight:bold; color:${t.navy}; padding-bottom:4px;" class="bar-label">EB-2 NIW <span style="float:right; color:${t.gold}; font-weight:bold;">${data.visas.eb2niw.met} de ${data.visas.eb2niw.total} — ${data.visas.eb2niw.pct}%</span></td></tr>
+              <tr><td style="font-family:Georgia,serif; font-size:15px; font-weight:bold; color:${t.navy}; padding-bottom:4px;" class="bar-label">EB-2 NIW <span style="float:right; color:${emailGold}; font-weight:bold;">${data.visas.eb2niw.met} de ${data.visas.eb2niw.total} — ${data.visas.eb2niw.pct}%</span></td></tr>
               <tr><td><div style="width:100%; height:12px; background-color:rgba(27,37,65,0.08); border-radius:2px;"><div style="width:${data.visas.eb2niw.pct}%; height:12px; background:linear-gradient(90deg,${t.navy},${t.navyAlt}); border-radius:2px; min-width:4px;"></div></div></td></tr>
               <tr><td style="font-family:Georgia,serif; font-size:12px; color:#8A8890; padding-top:3px; font-style:italic;">Green Card direto • Sem patrocinador • Base legal: INA §203(b)(2) + Matter of Dhanasar</td></tr>
             </table>
@@ -131,7 +132,7 @@ export function generateEmailHTML(data: EmailData): string {
           <!-- EB-1A BAR -->
           <tr><td style="padding:18px 40px 0;" class="mobile-pad">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-              <tr><td style="font-family:Georgia,serif; font-size:15px; font-weight:bold; color:${t.navy}; padding-bottom:4px;" class="bar-label">EB-1A <span style="float:right; color:${t.gold}; font-weight:bold;">${data.visas.eb1a.met} de ${data.visas.eb1a.total} — ${data.visas.eb1a.pct}%</span></td></tr>
+              <tr><td style="font-family:Georgia,serif; font-size:15px; font-weight:bold; color:${t.navy}; padding-bottom:4px;" class="bar-label">EB-1A <span style="float:right; color:${emailGold}; font-weight:bold;">${data.visas.eb1a.met} de ${data.visas.eb1a.total} — ${data.visas.eb1a.pct}%</span></td></tr>
               <tr><td><div style="width:100%; height:12px; background-color:rgba(27,37,65,0.08); border-radius:2px;"><div style="width:${data.visas.eb1a.pct}%; height:12px; background:linear-gradient(90deg,#6B21A8,#9333EA); border-radius:2px; min-width:4px;"></div></div></td></tr>
               <tr><td style="font-family:Georgia,serif; font-size:12px; color:#8A8890; padding-top:3px; font-style:italic;">Green Card direto • Sem patrocinador • Base legal: INA §203(b)(1)(A) + Kazarian v. USCIS</td></tr>
             </table>
@@ -140,7 +141,7 @@ export function generateEmailHTML(data: EmailData): string {
           <!-- L-1A BAR -->
           <tr><td style="padding:18px 40px 0;" class="mobile-pad">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-              <tr><td style="font-family:Georgia,serif; font-size:15px; font-weight:bold; color:${t.navy}; padding-bottom:4px;" class="bar-label">L-1A <span style="float:right; color:${t.gold}; font-weight:bold;">${data.visas.l1a.met} de ${data.visas.l1a.total} — ${data.visas.l1a.pct}%</span></td></tr>
+              <tr><td style="font-family:Georgia,serif; font-size:15px; font-weight:bold; color:${t.navy}; padding-bottom:4px;" class="bar-label">L-1A <span style="float:right; color:${emailGold}; font-weight:bold;">${data.visas.l1a.met} de ${data.visas.l1a.total} — ${data.visas.l1a.pct}%</span></td></tr>
               <tr><td><div style="width:100%; height:12px; background-color:rgba(27,37,65,0.08); border-radius:2px;"><div style="width:${data.visas.l1a.pct}%; height:12px; background:linear-gradient(90deg,#047857,#059669); border-radius:2px; min-width:4px;"></div></div></td></tr>
               <tr><td style="font-family:Georgia,serif; font-size:12px; color:#8A8890; padding-top:3px; font-style:italic;">Visto de trabalho → Green Card via EB-1C • Base legal: INA §101(a)(15)(L)</td></tr>
             </table>
@@ -149,7 +150,7 @@ export function generateEmailHTML(data: EmailData): string {
           <!-- O-1A BAR -->
           <tr><td style="padding:18px 40px 30px;" class="mobile-pad">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-              <tr><td style="font-family:Georgia,serif; font-size:15px; font-weight:bold; color:${t.navy}; padding-bottom:4px;" class="bar-label">O-1A <span style="float:right; color:${t.gold}; font-weight:bold;">${data.visas.o1a.met} de ${data.visas.o1a.total} — ${data.visas.o1a.pct}%</span></td></tr>
+              <tr><td style="font-family:Georgia,serif; font-size:15px; font-weight:bold; color:${t.navy}; padding-bottom:4px;" class="bar-label">O-1A <span style="float:right; color:${emailGold}; font-weight:bold;">${data.visas.o1a.met} de ${data.visas.o1a.total} — ${data.visas.o1a.pct}%</span></td></tr>
               <tr><td><div style="width:100%; height:12px; background-color:rgba(27,37,65,0.08); border-radius:2px;"><div style="width:${data.visas.o1a.pct}%; height:12px; background:linear-gradient(90deg,#B91C1C,#DC2626); border-radius:2px; min-width:4px;"></div></div></td></tr>
               <tr><td style="font-family:Georgia,serif; font-size:12px; color:#8A8890; padding-top:3px; font-style:italic;">Visto de talento → Green Card via EB-1A • Base legal: INA §101(a)(15)(O)</td></tr>
             </table>
@@ -159,7 +160,7 @@ export function generateEmailHTML(data: EmailData): string {
           <tr><td style="padding:0 40px 20px;" class="mobile-pad">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:${t.navy}; border-radius:3px;">
               <tr><td style="padding:25px 30px; text-align:center;">
-                <p style="margin:0 0 5px; font-family:Georgia,serif; font-size:11px; color:${t.gold}; letter-spacing:3px; text-transform:uppercase;">Melhor caminho para o seu perfil</p>
+                <p style="margin:0 0 5px; font-family:Georgia,serif; font-size:11px; color:${emailGold}; letter-spacing:3px; text-transform:uppercase;">Melhor caminho para o seu perfil</p>
                 <h2 style="margin:0 0 8px; font-family:Georgia,serif; font-size:26px; font-weight:normal; color:${t.creamAlt};">${primaryVisaName}</h2>
                 <p style="margin:0; font-family:Georgia,serif; font-size:14px; color:rgba(250,250,248,0.5); line-height:1.6;">
                   Esta é a categoria em que você atende mais critérios com base nas suas respostas. A análise final depende da documentação completa do seu caso.
@@ -190,7 +191,7 @@ export function generateEmailHTML(data: EmailData): string {
           <tr><td style="padding:0 40px 25px;" class="mobile-pad">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:rgba(184,134,11,0.06); border:1px solid rgba(184,134,11,0.2); border-radius:3px;">
               <tr><td style="padding:22px 25px;">
-                <p style="margin:0 0 5px; font-family:Georgia,serif; font-size:11px; color:${t.gold}; letter-spacing:2px; text-transform:uppercase; font-weight:bold;">⚠ Ponto de atenção</p>
+                <p style="margin:0 0 5px; font-family:Georgia,serif; font-size:11px; color:${emailGold}; letter-spacing:2px; text-transform:uppercase; font-weight:bold;">⚠ Ponto de atenção</p>
                 <p style="margin:0 0 10px; font-family:Georgia,serif; font-size:16px; font-weight:bold; color:${t.navy};">L-1A requer estrutura organizacional</p>
                 <p style="margin:0; font-family:Georgia,serif; font-size:14px; color:#5C5A65; line-height:1.7;">
                   A categoria L-1A exige que a empresa no Brasil possua uma <strong style="color:${t.navy};">estrutura com pelo menos 10 colaboradores</strong> para sustentar o cargo executivo ou gerencial perante o USCIS. Empresas com equipes menores apresentam risco significativo de negativa. Recomendamos discutir alternativas na sua consulta.
@@ -205,7 +206,7 @@ export function generateEmailHTML(data: EmailData): string {
 
           <!-- CATEGORIAS -->
           <tr><td style="padding:30px 40px 10px;" class="mobile-pad">
-            <p style="margin:0 0 5px; font-family:Georgia,serif; font-size:12px; color:${t.gold}; letter-spacing:3px; text-transform:uppercase;">Entenda as categorias</p>
+            <p style="margin:0 0 5px; font-family:Georgia,serif; font-size:12px; color:${emailGold}; letter-spacing:3px; text-transform:uppercase;">Entenda as categorias</p>
             <h2 style="margin:0; font-family:Georgia,serif; font-size:22px; font-weight:normal; color:${t.navy};">Os 4 caminhos legais para os EUA</h2>
           </td></tr>
 
@@ -213,17 +214,17 @@ export function generateEmailHTML(data: EmailData): string {
           <tr><td style="padding:20px 40px 0;" class="mobile-pad">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:rgba(27,37,65,0.03); border-left:3px solid ${t.navy}; border-radius:0 3px 3px 0;">
               <tr><td style="padding:20px;">
-                <p style="margin:0 0 2px; font-family:Georgia,serif; font-size:11px; color:${t.gold}; letter-spacing:2px; text-transform:uppercase; font-weight:bold;">🇺🇸 EB-2 NIW</p>
+                <p style="margin:0 0 2px; font-family:Georgia,serif; font-size:11px; color:${emailGold}; letter-spacing:2px; text-transform:uppercase; font-weight:bold;">🇺🇸 EB-2 NIW</p>
                 <p style="margin:0 0 10px; font-family:Georgia,serif; font-size:17px; font-weight:bold; color:${t.navy};">Green Card por Interesse Nacional</p>
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom:12px;">
                   <tr>
                     <td width="50%" style="padding:8px 10px; background:rgba(27,37,65,0.04); border-radius:2px; vertical-align:top;">
-                      <p style="margin:0 0 2px; font-family:Georgia,serif; font-size:10px; color:${t.gold}; letter-spacing:1px; text-transform:uppercase;">Tipo</p>
+                      <p style="margin:0 0 2px; font-family:Georgia,serif; font-size:10px; color:${emailGold}; letter-spacing:1px; text-transform:uppercase;">Tipo</p>
                       <p style="margin:0; font-family:Georgia,serif; font-size:13px; color:${t.navy}; font-weight:bold;">Green Card Direto</p>
                     </td>
                     <td width="5"></td>
                     <td width="50%" style="padding:8px 10px; background:rgba(27,37,65,0.04); border-radius:2px; vertical-align:top;">
-                      <p style="margin:0 0 2px; font-family:Georgia,serif; font-size:10px; color:${t.gold}; letter-spacing:1px; text-transform:uppercase;">Taxa USCIS 2025</p>
+                      <p style="margin:0 0 2px; font-family:Georgia,serif; font-size:10px; color:${emailGold}; letter-spacing:1px; text-transform:uppercase;">Taxa USCIS 2025</p>
                       <p style="margin:0; font-family:Georgia,serif; font-size:13px; color:${t.navy}; font-weight:bold;">~54–67% geral</p>
                     </td>
                   </tr>
@@ -279,7 +280,7 @@ export function generateEmailHTML(data: EmailData): string {
 
           <!-- SOBRE O PARCEIRO -->
           <tr><td style="padding:30px 40px 10px;" class="mobile-pad">
-            <p style="margin:0 0 5px; font-family:Georgia,serif; font-size:12px; color:${t.gold}; letter-spacing:3px; text-transform:uppercase;">Quem vai cuidar do seu caso</p>
+            <p style="margin:0 0 5px; font-family:Georgia,serif; font-size:12px; color:${emailGold}; letter-spacing:3px; text-transform:uppercase;">Quem vai cuidar do seu caso</p>
             <h2 style="margin:0; font-family:Georgia,serif; font-size:22px; font-weight:normal; color:${t.navy};">${tenant.name}</h2>
           </td></tr>
           <tr><td style="padding:10px 40px 15px;" class="mobile-pad">
@@ -293,12 +294,12 @@ export function generateEmailHTML(data: EmailData): string {
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:${t.navy}; border-radius:3px;">
               <tr>
                 <td style="padding:22px 15px; text-align:center; vertical-align:top;" width="50%" class="stat-col">
-                  <p style="margin:0 0 3px; font-family:Georgia,serif; font-size:28px; font-weight:bold; color:${t.gold};">${approvalEbNiw}</p>
+                  <p style="margin:0 0 3px; font-family:Georgia,serif; font-size:28px; font-weight:bold; color:${emailGold};">${approvalEbNiw}</p>
                   <p style="margin:0; font-family:Georgia,serif; font-size:11px; color:rgba(250,250,248,0.5); letter-spacing:1px; text-transform:uppercase;">Aprovação EB-2 NIW &amp; EB-1A</p>
                   <p style="margin:4px 0 0; font-family:Georgia,serif; font-size:10px; color:rgba(250,250,248,0.3); font-style:italic;">vs. ~54-67% média geral USCIS</p>
                 </td>
                 <td style="padding:22px 15px; text-align:center; vertical-align:top; border-left:1px solid rgba(250,250,248,0.08);" width="50%" class="stat-col">
-                  <p style="margin:0 0 3px; font-family:Georgia,serif; font-size:28px; font-weight:bold; color:${t.gold};">${approvalL1a}</p>
+                  <p style="margin:0 0 3px; font-family:Georgia,serif; font-size:28px; font-weight:bold; color:${emailGold};">${approvalL1a}</p>
                   <p style="margin:0; font-family:Georgia,serif; font-size:11px; color:rgba(250,250,248,0.5); letter-spacing:1px; text-transform:uppercase;">Aprovação L-1A &amp; O-1A</p>
                   <p style="margin:4px 0 0; font-family:Georgia,serif; font-size:10px; color:rgba(250,250,248,0.3); font-style:italic;">vs. ~80-94% média geral USCIS</p>
                 </td>
@@ -315,12 +316,12 @@ export function generateEmailHTML(data: EmailData): string {
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background:${t.navy}; border-radius:3px;">
               <tr><td style="padding:30px; text-align:center;">
                 <p style="margin:0 0 4px; font-family:Georgia,serif; font-size:30px;">📘</p>
-                <p style="margin:0 0 5px; font-family:Georgia,serif; font-size:11px; color:${t.gold}; letter-spacing:3px; text-transform:uppercase;">E-book gratuito</p>
+                <p style="margin:0 0 5px; font-family:Georgia,serif; font-size:11px; color:${emailGold}; letter-spacing:3px; text-transform:uppercase;">E-book gratuito</p>
                 <h3 style="margin:0 0 10px; font-family:Georgia,serif; font-size:20px; font-weight:normal; color:${t.creamAlt}; line-height:1.3;">Guia Completo: Os 4 Caminhos<br>para Morar nos EUA</h3>
                 <p style="margin:0 0 20px; font-family:Georgia,serif; font-size:14px; color:rgba(250,250,248,0.5); line-height:1.6;">Requisitos detalhados, prazos, custos estimados, documentação necessária e como fortalecer seu perfil para cada categoria.</p>
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
                   <tr>
-                    <td style="background:${t.gold}; border-radius:2px;">
+                    <td style="background:${emailGold}; border-radius:2px;">
                       <a href="${a.ebookUrl}" target="_blank" style="display:inline-block; padding:14px 35px; font-family:Georgia,serif; font-size:14px; color:${t.navy}; text-decoration:none; letter-spacing:2px; text-transform:uppercase; font-weight:bold;">Baixar E-book →</a>
                     </td>
                   </tr>
@@ -333,7 +334,7 @@ export function generateEmailHTML(data: EmailData): string {
 
           <!-- CTA -->
           <tr><td style="padding:30px 40px 10px;" class="mobile-pad">
-            <p style="margin:0 0 5px; font-family:Georgia,serif; font-size:12px; color:${t.gold}; letter-spacing:3px; text-transform:uppercase;">Próximo passo</p>
+            <p style="margin:0 0 5px; font-family:Georgia,serif; font-size:12px; color:${emailGold}; letter-spacing:3px; text-transform:uppercase;">Próximo passo</p>
             <h2 style="margin:0; font-family:Georgia,serif; font-size:22px; font-weight:normal; color:${t.navy};">Quer saber exatamente como avançar?</h2>
           </td></tr>
           <tr><td style="padding:10px 40px 25px;" class="mobile-pad">
@@ -344,7 +345,7 @@ export function generateEmailHTML(data: EmailData): string {
           <tr><td style="padding:0 40px 35px; text-align:center;" class="mobile-pad">
             <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="center">
               <tr>
-                <td style="background:${t.navy}; border:1px solid ${t.gold}; border-radius:2px;">
+                <td style="background:${t.navy}; border:1px solid ${emailGold}; border-radius:2px;">
                   <a href="${whatsappUrl}" target="_blank" style="display:inline-block; padding:15px 40px; font-family:Georgia,serif; font-size:14px; color:${t.creamAlt}; text-decoration:none; letter-spacing:2px; text-transform:uppercase;">Falar pelo WhatsApp →</a>
                 </td>
               </tr>
@@ -352,13 +353,13 @@ export function generateEmailHTML(data: EmailData): string {
           </td></tr>
 
           <!-- FLAG BAR BOTTOM -->
-          <tr><td style="height:5px; background:linear-gradient(90deg,${t.flagBlue} 40%,${t.gold} 40%,${t.gold} 60%,${t.flagRed} 60%); font-size:0; line-height:0;">&nbsp;</td></tr>
+          <tr><td style="height:5px; background:linear-gradient(90deg,${t.flagBlue} 40%,${emailGold} 40%,${emailGold} 60%,${t.flagRed} 60%); font-size:0; line-height:0;">&nbsp;</td></tr>
 
           <!-- FOOTER -->
           <tr>
             <td style="padding:25px 40px; text-align:center; background:rgba(27,37,65,0.03);" class="mobile-pad">
               <p style="margin:0 0 5px; font-family:Georgia,serif; font-size:16px; font-weight:bold; letter-spacing:2px; color:${t.navy};">${tenant.name.toUpperCase()}</p>
-              <p style="margin:0 0 12px; font-family:Georgia,serif; font-size:10px; letter-spacing:3px; color:${t.gold}; text-transform:uppercase;">Consultoria Migratória</p>
+              <p style="margin:0 0 12px; font-family:Georgia,serif; font-size:10px; letter-spacing:3px; color:${emailGold}; text-transform:uppercase;">Consultoria Migratória</p>
               ${c.phone ? `<p style="margin:0 0 5px; font-family:Georgia,serif; font-size:12px; color:#8A8890;">${c.phone}</p>` : ''}
               <p style="margin:8px 0 0; font-family:Georgia,serif; font-size:11px; color:#B0AEB5; line-height:1.6;">
                 Você recebeu este e-mail porque completou nosso teste de elegibilidade.<br>

@@ -7,8 +7,9 @@ export const ThemeSchema = z.object({
   goldAlt:  z.string().default('#D4A847'),
   cream:    z.string().default('#F0EDE8'),
   creamAlt: z.string().default('#FAFAF8'),
-  flagBlue: z.string().default('#1B3A6B'),
-  flagRed:  z.string().default('#C41E3A'),
+  flagBlue:  z.string().default('#1B3A6B'),
+  flagRed:   z.string().default('#C41E3A'),
+  goldEmail: z.string().default(''),
 }).default({});
 
 export const AssetsSchema = z.object({
