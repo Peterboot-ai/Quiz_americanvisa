@@ -92,11 +92,12 @@ const Admin = () => {
     'Authorization': `Bearer ${session?.access_token ?? ''}`,
   });
 
-  const fetchLeads = async (token?: string) => {
+  const fetchLeads = async (token?: string, slugOverride?: string) => {
     const t = token ?? session?.access_token ?? '';
     if (!t) return;
+    const effectiveSlug = slugOverride ?? tenantSlug;
     try {
-      const leadsUrl = tenantSlug ? `/api/admin/leads?tenant=${tenantSlug}` : '/api/admin/leads';
+      const leadsUrl = effectiveSlug ? `/api/admin/leads?tenant=${effectiveSlug}` : '/api/admin/leads';
       const response = await fetch(leadsUrl, {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${t}` },
       });
@@ -124,7 +125,7 @@ const Admin = () => {
         if (!resolvedTenantSlug) setResolvedTenantSlug(slug);
         if (meData.tenant?.name) setResolvedTenantName(meData.tenant.name);
 
-        fetchLeads(token);
+        fetchLeads(token, slug);
 
         fetch(`/api/admin/onboarding?tenant=${slug}`, { headers: { Authorization: `Bearer ${token}` } })
           .then(r => r.json())
