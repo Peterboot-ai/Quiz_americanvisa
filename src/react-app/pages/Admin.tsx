@@ -110,34 +110,31 @@ const Admin = () => {
   };
 
   useEffect(() => {
-    if (session?.access_token) {
-      const token = session.access_token;
-      // Resolve tenant from server (partner_admin gets their own tenant automatically)
-      fetch('/api/admin/me', { headers: { Authorization: `Bearer ${token}` } })
-        .then(r => r.json())
-        .then(meData => {
-          const slug = urlTenantSlug ?? meData.tenant?.slug;
-          if (meData.success && meData.tenant) {
-            if (!urlTenantSlug) setResolvedTenantSlug(meData.tenant.slug);
-            setResolvedTenantName(meData.tenant.name);
-          }
-          fetchLeads(token);
-          const onboardingUrl = slug ? `/api/admin/onboarding?tenant=${slug}` : '/api/admin/onboarding';
-          fetch(onboardingUrl, { headers: { Authorization: `Bearer ${token}` } })
-            .then(r => r.json())
-            .then(data => {
-              if (data.success) {
-                setOnboarding(data);
-                if (!data.isComplete) setShowOnboarding(true);
-              }
-            })
-            .catch(() => {/* non-blocking */});
-        })
-        .catch(() => { fetchLeads(token); });
-    } else {
-      setLoading(false);
-    }
-  }, [session]);
+    if (!session?.access_token) { setLoading(false); return; }
+    const token = session.access_token;
+
+    fetch('/api/admin/me', { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(meData => {
+        // partner_admin: usa o tenant do servidor
+        // super_admin: usa ?tenant= da URL ou slug do TenantProvider (domínio)
+        const slug = urlTenantSlug ?? meData.tenant?.slug ?? tenant?.slug;
+        if (!slug) { setLoading(false); return; }
+
+        if (!resolvedTenantSlug) setResolvedTenantSlug(slug);
+        if (meData.tenant?.name) setResolvedTenantName(meData.tenant.name);
+
+        fetchLeads(token);
+
+        fetch(`/api/admin/onboarding?tenant=${slug}`, { headers: { Authorization: `Bearer ${token}` } })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) { setOnboarding(data); if (!data.isComplete) setShowOnboarding(true); }
+          })
+          .catch(() => {});
+      })
+      .catch(() => { fetchLeads(token); });
+  }, [session, tenant?.slug]);
 
   const updateStatus = async (id: number, status: string) => {
     try {
