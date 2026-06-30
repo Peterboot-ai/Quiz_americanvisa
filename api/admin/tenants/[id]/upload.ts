@@ -16,7 +16,7 @@ const ALLOWED_TYPES: Record<string, string> = {
 const ASSET_KEYS = ['logoUrl', 'logoLight', 'ogImageUrl', 'ebookUrl', 'proofImage'] as const;
 type AssetKey = typeof ASSET_KEYS[number];
 
-export const config = { api: { bodyParser: false } };
+export const config = { api: { bodyParser: false, responseLimit: false } };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const auth = await requireAuth(req, res, 'super_admin');

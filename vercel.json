@@ -9,7 +9,8 @@
   ],
   "functions": {
     "api/admin/tenants/[id]/upload.ts": {
-      "maxDuration": 30
+      "maxDuration": 30,
+      "memory": 1024
     }
   },
   "crons": [
