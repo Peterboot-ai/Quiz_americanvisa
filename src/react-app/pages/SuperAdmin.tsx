@@ -275,17 +275,44 @@ const SuperAdmin = () => {
     setUploading(true);
     setMsg('');
     try {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('assetKey', assetKey);
-      const r = await fetch(`/api/admin/tenants/${selected.id}/upload`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` },
-        body: fd,
+      const bucket = 'tenant-assets';
+      const ext = file.name.split('.').pop()?.toLowerCase() ?? 'png';
+      const ts = Date.now();
+      const path = `${selected.slug}/${assetKey}_${ts}.${ext}`;
+
+      // Remove arquivo antigo do storage
+      const oldUrl = assetKey !== 'proofImage' ? selected.assets?.[assetKey] as string | undefined : undefined;
+      if (oldUrl) {
+        const oldPathMatch = oldUrl.match(/tenant-assets\/(.+?)(\?.*)?$/);
+        if (oldPathMatch) await supabase.storage.from(bucket).remove([oldPathMatch[1]]);
+      }
+
+      // Upload direto do browser para o Supabase Storage (sem limite do Vercel)
+      const { error: uploadErr } = await supabase.storage
+        .from(bucket)
+        .upload(path, file, { contentType: file.type, upsert: false });
+
+      if (uploadErr) { setMsg(`❌ ${uploadErr.message}`); return; }
+
+      const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path);
+
+      // Atualiza assets no banco via API
+      let newAssets: Record<string, unknown>;
+      if (assetKey === 'proofImage') {
+        const existing = Array.isArray(selected.assets?.proofImages) ? selected.assets.proofImages as string[] : [];
+        newAssets = { ...selected.assets, proofImages: [...existing, publicUrl] };
+      } else {
+        newAssets = { ...selected.assets, [assetKey]: publicUrl };
+      }
+
+      const r = await fetch(`/api/admin/tenants/${selected.id}`, {
+        method: 'PATCH',
+        headers: { ...headers(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assets: newAssets }),
       });
       const data = await r.json();
       if (data.success) {
-        setMsg(`✅ Upload feito: ${data.url}`);
+        setMsg(`✅ Upload feito!`);
         const r2 = await fetch('/api/admin/tenants', { headers: headers() });
         const d2 = await r2.json();
         setTenants(d2.tenants ?? []);
