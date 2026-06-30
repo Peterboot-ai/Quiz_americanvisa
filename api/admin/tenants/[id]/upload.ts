@@ -22,12 +22,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const auth = await requireAuth(req, res, 'super_admin');
   if (!auth) return;
 
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST' && req.method !== 'DELETE') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
   const id = Number(req.query.id);
   if (!id || isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
 
-  // Confirm tenant exists
   const { data: tenant, error: tenantErr } = await supabase
     .from('tenants')
     .select('id, slug, assets')
@@ -36,7 +37,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (tenantErr || !tenant) return res.status(404).json({ error: 'Tenant não encontrado' });
 
-  // Read raw body
+  const bucket = 'tenant-assets';
+  const currentAssets = (tenant.assets as Record<string, unknown>) ?? {};
+
+  // ── DELETE ──────────────────────────────────────────────────────────
+  if (req.method === 'DELETE') {
+    const assetKeyDel = req.query.assetKey as string;
+    if (!assetKeyDel || !ASSET_KEYS.includes(assetKeyDel as AssetKey)) {
+      return res.status(400).json({ error: `assetKey inválido. Use: ${ASSET_KEYS.join(', ')}` });
+    }
+
+    if (assetKeyDel === 'proofImage') {
+      const urlToDel = req.query.url as string;
+      if (!urlToDel) return res.status(400).json({ error: 'url obrigatória para proofImage' });
+      const existing = Array.isArray(currentAssets.proofImages) ? currentAssets.proofImages as string[] : [];
+      const updated = existing.filter(u => u !== urlToDel);
+      const pathMatch = urlToDel.match(/tenant-assets\/(.+)$/);
+      if (pathMatch) await supabase.storage.from(bucket).remove([pathMatch[1]]);
+      await supabase.from('tenants').update({ assets: { ...currentAssets, proofImages: updated } }).eq('id', id);
+    } else {
+      const exts = Object.values(ALLOWED_TYPES);
+      await supabase.storage.from(bucket).remove(exts.map(e => `${tenant.slug}/${assetKeyDel}${e}`));
+      const updated = { ...currentAssets };
+      delete updated[assetKeyDel];
+      await supabase.from('tenants').update({ assets: updated }).eq('id', id);
+    }
+
+    return res.status(200).json({ success: true });
+  }
+
+  // ── POST (upload) ────────────────────────────────────────────────────
   const chunks: Buffer[] = [];
   for await (const chunk of req) {
     chunks.push(Buffer.from(chunk));
@@ -47,7 +77,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const boundary = contentType.split('boundary=')[1];
   if (!boundary) return res.status(400).json({ error: 'Content-Type deve ser multipart/form-data' });
 
-  // Parse multipart manually
   const { file, assetKey, mimeType } = parseMultipart(rawBody, boundary);
   if (!file) return res.status(400).json({ error: 'Arquivo não encontrado no body' });
   if (!ASSET_KEYS.includes(assetKey as AssetKey)) return res.status(400).json({ error: `assetKey inválido. Use: ${ASSET_KEYS.join(', ')}` });
@@ -55,7 +84,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const ext = ALLOWED_TYPES[mimeType];
   const path = `${tenant.slug}/${assetKey}${ext}`;
-  const bucket = 'tenant-assets';
 
   const { error: uploadErr } = await supabase.storage
     .from(bucket)
@@ -65,12 +93,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(path);
 
-  // Update assets JSONB field
-  const currentAssets = (tenant.assets as Record<string, unknown>) ?? {};
   let updatedAssets: Record<string, unknown>;
 
   if (assetKey === 'proofImage') {
-    // Append to proofImages array
     const existing = Array.isArray(currentAssets.proofImages) ? currentAssets.proofImages as string[] : [];
     if (!existing.includes(publicUrl)) existing.push(publicUrl);
     updatedAssets = { ...currentAssets, proofImages: existing };

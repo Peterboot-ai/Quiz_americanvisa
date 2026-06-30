@@ -68,6 +68,8 @@ const SuperAdmin = () => {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [deletingAsset, setDeletingAsset] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<Record<string, string>>({});
   const [generatingPalette, setGeneratingPalette] = useState(false);
   const [tenantUsers, setTenantUsers] = useState<TenantUser[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -295,6 +297,34 @@ const SuperAdmin = () => {
     } finally {
       setUploading(false);
       if (fileRefs.current[assetKey]) fileRefs.current[assetKey]!.value = '';
+      setSelectedFiles(prev => { const n = { ...prev }; delete n[assetKey]; return n; });
+    }
+  };
+
+  const deleteAsset = async (assetKey: string, url?: string) => {
+    if (!selected) return;
+    setDeletingAsset(assetKey);
+    setMsg('');
+    try {
+      const params = new URLSearchParams({ assetKey });
+      if (url) params.set('url', url);
+      const r = await fetch(`/api/admin/tenants/${selected.id}/upload?${params}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${session?.access_token ?? ''}` },
+      });
+      const data = await r.json();
+      if (data.success) {
+        setMsg('✅ Imagem removida');
+        const r2 = await fetch('/api/admin/tenants', { headers: headers() });
+        const d2 = await r2.json();
+        setTenants(d2.tenants ?? []);
+        const updated = d2.tenants?.find((t: Tenant) => t.id === selected.id);
+        if (updated) { setSelected(updated); selectTenant(updated); }
+      } else {
+        setMsg(`❌ ${data.error}`);
+      }
+    } finally {
+      setDeletingAsset(null);
     }
   };
 
@@ -603,14 +633,45 @@ const SuperAdmin = () => {
                         <div key={asset.key} className="border rounded p-3">
                           <p className="text-sm font-medium text-gray-700 mb-1">{asset.label}</p>
                           {asset.current && (
-                            <div className="mb-2">
-                              <img src={asset.current} alt="" className="h-12 object-contain border rounded"/>
-                              <p className="text-[10px] text-gray-400 mt-1 break-all">{asset.current}</p>
+                            <div className="mb-2 flex items-start gap-3">
+                              <img src={asset.current} alt="" className="h-12 object-contain border rounded bg-gray-50"/>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[10px] text-gray-400 break-all">{asset.current}</p>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => deleteAsset(asset.key)}
+                                disabled={deletingAsset === asset.key}
+                                className="text-xs text-red-600 border-red-300 hover:bg-red-50 shrink-0"
+                              >
+                                {deletingAsset === asset.key ? '...' : 'Excluir'}
+                              </Button>
                             </div>
                           )}
-                          <div className="flex gap-2 items-center">
-                            <input ref={el => { fileRefs.current[asset.key] = el; }} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="text-xs"/>
-                            <Button size="sm" variant="outline" onClick={() => uploadAsset(asset.key)} disabled={uploading} className="text-xs">
+                          <div className="flex gap-2 items-center flex-wrap">
+                            <label className="cursor-pointer">
+                              <span className="inline-flex items-center px-2 py-1 border rounded text-xs bg-white hover:bg-gray-50 border-gray-300 text-gray-700">
+                                {selectedFiles[asset.key] ? `📎 ${selectedFiles[asset.key]}` : 'Escolher arquivo'}
+                              </span>
+                              <input
+                                ref={el => { fileRefs.current[asset.key] = el; }}
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                                className="hidden"
+                                onChange={e => {
+                                  const name = e.target.files?.[0]?.name ?? '';
+                                  setSelectedFiles(prev => name ? { ...prev, [asset.key]: name } : prev);
+                                }}
+                              />
+                            </label>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => uploadAsset(asset.key)}
+                              disabled={uploading || !selectedFiles[asset.key]}
+                              className="text-xs"
+                            >
                               {uploading ? 'Enviando...' : 'Upload'}
                             </Button>
                           </div>
@@ -623,7 +684,14 @@ const SuperAdmin = () => {
                           <p className="text-sm font-medium text-gray-700 mb-2">Imagens de prova social ({(selected.assets.proofImages as string[]).length})</p>
                           <div className="flex gap-2 flex-wrap">
                             {(selected.assets.proofImages as string[]).map((url, i) => (
-                              <img key={i} src={url} alt={`Prova ${i+1}`} className="h-16 object-cover rounded border"/>
+                              <div key={i} className="relative group">
+                                <img src={url} alt={`Prova ${i+1}`} className="h-16 object-cover rounded border"/>
+                                <button
+                                  onClick={() => deleteAsset('proofImage', url)}
+                                  className="absolute top-0 right-0 bg-red-600 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Remover"
+                                >✕</button>
+                              </div>
                             ))}
                           </div>
                         </div>
