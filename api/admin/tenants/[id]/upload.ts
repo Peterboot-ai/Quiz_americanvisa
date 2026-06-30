@@ -83,11 +83,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!ALLOWED_TYPES[mimeType]) return res.status(400).json({ error: 'Tipo de arquivo não permitido' });
 
   const ext = ALLOWED_TYPES[mimeType];
-  const path = `${tenant.slug}/${assetKey}${ext}`;
+  const ts = Date.now();
+  const path = `${tenant.slug}/${assetKey}_${ts}${ext}`;
+
+  // Remove old versions of this asset from storage before uploading new one
+  if (assetKey !== 'proofImage') {
+    const oldExts = Object.values(ALLOWED_TYPES);
+    const oldUrl = currentAssets[assetKey] as string | undefined;
+    if (oldUrl) {
+      const oldPathMatch = oldUrl.match(/tenant-assets\/(.+?)(\?.*)?$/);
+      if (oldPathMatch) await supabase.storage.from(bucket).remove([oldPathMatch[1]]);
+    } else {
+      // Fallback: try removing with all extensions (legacy fixed names)
+      await supabase.storage.from(bucket).remove(oldExts.map(e => `${tenant.slug}/${assetKey}${e}`));
+    }
+  }
 
   const { error: uploadErr } = await supabase.storage
     .from(bucket)
-    .upload(path, file, { contentType: mimeType, upsert: true });
+    .upload(path, file, { contentType: mimeType, upsert: false });
 
   if (uploadErr) return res.status(500).json({ error: uploadErr.message });
 
